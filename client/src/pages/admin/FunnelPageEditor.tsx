@@ -402,8 +402,14 @@ function PageEditorPanel({ slug, showPreview }: PageEditorPanelProps) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  function handleSave() {
-    updateMutation.mutate(formToPayload(slug, form));
+  async function handleSave() {
+    try {
+      const payload = formToPayload(slug, form);
+      await updateMutation.mutateAsync(payload);
+    } catch (err) {
+      console.error("Save failed:", err);
+      toast.error(`Save failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+    }
   }
 
   function handlePublish() {
