@@ -164,6 +164,8 @@ interface YTPlayerConstructor {
   new (
     elementId: string,
     config: {
+      width?: string | number;
+      height?: string | number;
       videoId: string;
       playerVars?: Record<string, number | string>;
       events?: { onReady?: () => void };
@@ -228,6 +230,8 @@ function YouTubePlayer({ embedUrl, onReady, playerRef }: YouTubePlayerProps) {
     if (!match) return;
 
     const player = new (window.YT!).Player(iframeId, {
+      width: "100%",
+      height: "100%",
       videoId: match[1],
       playerVars: {
         autoplay: 1,
@@ -255,10 +259,8 @@ function YouTubePlayer({ embedUrl, onReady, playerRef }: YouTubePlayerProps) {
   }, [apiReady, embedUrl, iframeId, onReady, playerRef]);
 
   return (
-    <div className="aspect-video w-full">
-      <div ref={containerRef}>
-        <div id={iframeId} className="w-full h-full" />
-      </div>
+    <div className="relative aspect-video w-full" ref={containerRef}>
+      <div id={iframeId} className="absolute inset-0 w-full h-full" />
     </div>
   );
 }
