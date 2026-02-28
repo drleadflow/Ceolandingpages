@@ -236,6 +236,7 @@ function YouTubePlayer({ embedUrl, onReady, playerRef }: YouTubePlayerProps) {
       playerVars: {
         autoplay: 1,
         mute: 1,
+        start: 0,
         enablejsapi: 1,
         origin: window.location.origin,
         rel: 0,
