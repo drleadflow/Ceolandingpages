@@ -91,6 +91,84 @@ function canSmartAutoplay(source: VideoSource): boolean {
   return source === "mp4" || source === "youtube" || source === "vimeo";
 }
 
+// ── Overlay Keyframe Animations ───────────────────────────────────────────────
+
+const OVERLAY_STYLES = `
+  @keyframes fac-enter {
+    0%   { opacity: 0; transform: scale(0.88) translateY(6px); }
+    100% { opacity: 1; transform: scale(1)    translateY(0); }
+  }
+  @keyframes fac-glow-pulse {
+    0%, 100% { opacity: 0.55; transform: scale(1); }
+    50%       { opacity: 1;   transform: scale(1.06); }
+  }
+  @keyframes eq-bar-1 {
+    0%,100% { height: 4px;  }
+    25%     { height: 14px; }
+    50%     { height: 8px;  }
+    75%     { height: 18px; }
+  }
+  @keyframes eq-bar-2 {
+    0%,100% { height: 18px; }
+    25%     { height: 6px;  }
+    50%     { height: 20px; }
+    75%     { height: 4px;  }
+  }
+  @keyframes eq-bar-3 {
+    0%,100% { height: 10px; }
+    25%     { height: 22px; }
+    50%     { height: 5px;  }
+    75%     { height: 14px; }
+  }
+  @keyframes eq-bar-4 {
+    0%,100% { height: 22px; }
+    25%     { height: 8px;  }
+    50%     { height: 16px; }
+    75%     { height: 6px;  }
+  }
+  @keyframes eq-bar-5 {
+    0%,100% { height: 6px;  }
+    25%     { height: 18px; }
+    50%     { height: 12px; }
+    75%     { height: 22px; }
+  }
+  @keyframes loud-enter {
+    0%   { opacity: 0; letter-spacing: 0.3em; }
+    100% { opacity: 1; letter-spacing: 0.12em; }
+  }
+  @keyframes loud-ring {
+    0%,100% { box-shadow: 0 0 0 0 currentColor; opacity: 0.7; }
+    50%      { box-shadow: 0 0 0 12px transparent; opacity: 1; }
+  }
+  @keyframes loud-scan {
+    0%   { transform: translateY(-100%); opacity: 0; }
+    10%  { opacity: 0.6; }
+    90%  { opacity: 0.6; }
+    100% { transform: translateY(100%); opacity: 0; }
+  }
+  @keyframes classy-enter {
+    0%   { opacity: 0; transform: translateX(-8px) scale(0.94); }
+    100% { opacity: 1; transform: translateX(0)   scale(1); }
+  }
+  @keyframes classy-dot {
+    0%,100% { opacity: 1; transform: scale(1);    }
+    50%      { opacity: 0.4; transform: scale(0.6); }
+  }
+  @keyframes classy-bar-1 {
+    0%,100% { height: 3px;  }
+    50%     { height: 10px; }
+  }
+  @keyframes classy-bar-2 {
+    0%,100% { height: 10px; }
+    50%     { height: 3px;  }
+  }
+  @keyframes classy-bar-3 {
+    0%,100% { height: 6px; }
+    33%     { height: 12px; }
+    66%     { height: 2px;  }
+  }
+`;
+
 // ── Overlay Components ───────────────────────────────────────────────────────
 
 interface OverlayProps {
@@ -98,56 +176,377 @@ interface OverlayProps {
   onClick: () => void;
 }
 
+/** Injects keyframe styles once into the document head. */
+function useOverlayStyles() {
+  if (typeof document !== "undefined" && !document.getElementById("funnel-overlay-keyframes")) {
+    const el = document.createElement("style");
+    el.id = "funnel-overlay-keyframes";
+    el.textContent = OVERLAY_STYLES;
+    document.head.appendChild(el);
+  }
+}
+
+// ── Equalizer Bar sub-component ───────────────────────────────────────────────
+
+function EqBars({ color, size = "md" }: { color: string; size?: "sm" | "md" }) {
+  const bars = [
+    { anim: "eq-bar-1", delay: "0s" },
+    { anim: "eq-bar-2", delay: "0.12s" },
+    { anim: "eq-bar-3", delay: "0.24s" },
+    { anim: "eq-bar-4", delay: "0.07s" },
+    { anim: "eq-bar-5", delay: "0.18s" },
+  ];
+  const w = size === "sm" ? "2px" : "3px";
+  const maxH = size === "sm" ? 14 : 24;
+  return (
+    <div
+      style={{ display: "flex", alignItems: "flex-end", gap: size === "sm" ? "2px" : "3px", height: `${maxH}px` }}
+      aria-hidden="true"
+    >
+      {bars.map((b, i) => (
+        <span
+          key={i}
+          style={{
+            display: "block",
+            width: w,
+            height: "4px",
+            borderRadius: "2px",
+            backgroundColor: color,
+            animation: `${b.anim} 0.9s ease-in-out infinite`,
+            animationDelay: b.delay,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── 1. Front and Center ───────────────────────────────────────────────────────
+
 function FrontAndCenterOverlay({ color, onClick }: OverlayProps) {
+  useOverlayStyles();
+
   return (
     <button
       onClick={onClick}
-      className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 transition-opacity cursor-pointer"
+      aria-label="Unmute video"
+      style={{
+        position: "absolute",
+        inset: 0,
+        zIndex: 10,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(0,0,0,0.18)",
+        cursor: "pointer",
+        border: "none",
+        padding: 0,
+      }}
     >
+      {/* Ambient glow behind card */}
+      <span
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          width: "260px",
+          height: "140px",
+          borderRadius: "50%",
+          background: color,
+          filter: "blur(60px)",
+          opacity: 0.28,
+          animation: "fac-glow-pulse 2.4s ease-in-out infinite",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Glass card */}
       <div
-        className="flex flex-col items-center gap-2 rounded-2xl px-8 py-6 text-white shadow-2xl animate-pulse"
-        style={{ backgroundColor: `${color}dd` }}
+        style={{
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "14px",
+          padding: "28px 40px",
+          borderRadius: "20px",
+          background: "rgba(8, 12, 22, 0.62)",
+          backdropFilter: "blur(18px) saturate(1.4)",
+          WebkitBackdropFilter: "blur(18px) saturate(1.4)",
+          border: `1px solid ${color}44`,
+          boxShadow: `0 0 0 1px rgba(255,255,255,0.06) inset, 0 24px 64px rgba(0,0,0,0.55), 0 0 32px ${color}22`,
+          animation: "fac-enter 0.38s cubic-bezier(0.16,1,0.3,1) both",
+        }}
       >
-        <Volume2 className="h-8 w-8" />
-        <span className="text-base font-bold tracking-wide">Your Video Is Playing</span>
-        <span className="text-sm font-medium opacity-90">Click To Unmute</span>
+        {/* Icon + eq bars row */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <Volume2
+            style={{ width: "22px", height: "22px", color: color, flexShrink: 0 }}
+            strokeWidth={1.75}
+          />
+          <EqBars color={color} size="md" />
+        </div>
+
+        {/* Label */}
+        <div style={{ textAlign: "center" }}>
+          <p
+            style={{
+              margin: 0,
+              fontSize: "13px",
+              fontWeight: 500,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "rgba(255,255,255,0.5)",
+              lineHeight: 1,
+            }}
+          >
+            Your video is playing
+          </p>
+          <p
+            style={{
+              margin: "8px 0 0",
+              fontSize: "18px",
+              fontWeight: 700,
+              letterSpacing: "-0.01em",
+              color: "#ffffff",
+              lineHeight: 1,
+            }}
+          >
+            Tap to Unmute
+          </p>
+        </div>
+
+        {/* Accent bottom line */}
+        <span
+          aria-hidden="true"
+          style={{
+            display: "block",
+            width: "48px",
+            height: "2px",
+            borderRadius: "2px",
+            background: `linear-gradient(90deg, transparent, ${color}, transparent)`,
+          }}
+        />
       </div>
     </button>
   );
 }
 
+// ── 2. Loud ───────────────────────────────────────────────────────────────────
+
 function LoudOverlay({ color, onClick }: OverlayProps) {
+  useOverlayStyles();
+
   return (
     <button
       onClick={onClick}
-      className="absolute inset-0 z-10 flex flex-col items-center justify-between py-6 bg-black/30 transition-opacity cursor-pointer"
+      aria-label="Unmute video"
+      style={{
+        position: "absolute",
+        inset: 0,
+        zIndex: 10,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "clamp(20px, 5%, 40px)",
+        background: "rgba(0,0,0,0.46)",
+        backdropFilter: "blur(2px)",
+        WebkitBackdropFilter: "blur(2px)",
+        cursor: "pointer",
+        border: "none",
+        overflow: "hidden",
+      }}
     >
+      {/* Horizontal scan-line sweep */}
       <span
-        className="text-2xl font-extrabold tracking-wider text-white drop-shadow-lg md:text-3xl"
-        style={{ textShadow: `0 2px 12px ${color}` }}
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: `linear-gradient(to bottom, transparent, ${color}18 50%, transparent)`,
+          animation: "loud-scan 3.5s linear infinite",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Top label */}
+      <span
+        style={{
+          position: "relative",
+          fontSize: "clamp(13px, 2.2vw, 16px)",
+          fontWeight: 600,
+          letterSpacing: "0.28em",
+          textTransform: "uppercase",
+          color: "rgba(255,255,255,0.65)",
+          animation: "loud-enter 0.5s ease-out both",
+        }}
       >
-        Your Video is Playing
+        Your Video Is Playing
       </span>
-      <Volume2 className="h-14 w-14 text-white animate-bounce" />
-      <span
-        className="text-xl font-extrabold tracking-wider text-white drop-shadow-lg md:text-2xl"
-        style={{ textShadow: `0 2px 12px ${color}` }}
+
+      {/* Center HUD ring */}
+      <div
+        style={{
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "16px",
+        }}
       >
-        Click here to Unmute
+        {/* Outer ring */}
+        <div
+          style={{
+            position: "relative",
+            width: "clamp(72px, 12vw, 96px)",
+            height: "clamp(72px, 12vw, 96px)",
+            borderRadius: "50%",
+            border: `2px solid ${color}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: `0 0 24px ${color}66, inset 0 0 24px ${color}22`,
+            animation: "loud-ring 1.8s ease-in-out infinite",
+            color: color,
+          }}
+        >
+          {/* Inner fill */}
+          <div
+            style={{
+              position: "absolute",
+              inset: "8px",
+              borderRadius: "50%",
+              background: `radial-gradient(circle, ${color}33, transparent 70%)`,
+            }}
+          />
+          <Volume2
+            style={{ width: "clamp(24px,4.5vw,36px)", height: "clamp(24px,4.5vw,36px)", color: "#fff", position: "relative" }}
+            strokeWidth={1.5}
+          />
+        </div>
+
+        {/* Equalizer bars under icon */}
+        <div style={{ display: "flex", alignItems: "flex-end", gap: "4px", height: "28px" }} aria-hidden="true">
+          {[
+            { anim: "eq-bar-1", delay: "0s" },
+            { anim: "eq-bar-2", delay: "0.1s" },
+            { anim: "eq-bar-3", delay: "0.22s" },
+            { anim: "eq-bar-4", delay: "0.06s" },
+            { anim: "eq-bar-5", delay: "0.16s" },
+            { anim: "eq-bar-2", delay: "0.3s" },
+            { anim: "eq-bar-1", delay: "0.08s" },
+          ].map((b, i) => (
+            <span
+              key={i}
+              style={{
+                display: "block",
+                width: "4px",
+                height: "4px",
+                borderRadius: "2px",
+                backgroundColor: color,
+                animation: `${b.anim} 0.85s ease-in-out infinite`,
+                animationDelay: b.delay,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Bottom CTA */}
+      <span
+        style={{
+          position: "relative",
+          fontSize: "clamp(20px, 4vw, 34px)",
+          fontWeight: 800,
+          letterSpacing: "-0.02em",
+          color: "#ffffff",
+          textShadow: `0 0 40px ${color}cc, 0 2px 12px rgba(0,0,0,0.6)`,
+          animation: "loud-enter 0.5s 0.1s ease-out both",
+        }}
+      >
+        Click to Unmute
       </span>
     </button>
   );
 }
 
+// ── 3. Classy ─────────────────────────────────────────────────────────────────
+
 function ClassyOverlay({ color, onClick }: OverlayProps) {
+  useOverlayStyles();
+
   return (
     <button
       onClick={onClick}
-      className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-full px-4 py-2 text-white text-sm font-semibold shadow-lg animate-bounce cursor-pointer"
-      style={{ backgroundColor: `${color}ee` }}
+      aria-label="Unmute video"
+      style={{
+        position: "absolute",
+        left: "12px",
+        top: "12px",
+        zIndex: 10,
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        padding: "7px 14px 7px 10px",
+        borderRadius: "999px",
+        background: "rgba(6, 10, 20, 0.72)",
+        backdropFilter: "blur(16px) saturate(1.5)",
+        WebkitBackdropFilter: "blur(16px) saturate(1.5)",
+        border: `1px solid ${color}55`,
+        boxShadow: `0 0 0 1px rgba(255,255,255,0.06) inset, 0 4px 20px rgba(0,0,0,0.45), 0 0 12px ${color}33`,
+        cursor: "pointer",
+        animation: "classy-enter 0.35s cubic-bezier(0.16,1,0.3,1) both",
+        color: "#fff",
+      }}
     >
-      <Volume2 className="h-4 w-4" />
-      Click to Unmute
+      {/* Live indicator dot */}
+      <span
+        aria-hidden="true"
+        style={{
+          width: "6px",
+          height: "6px",
+          borderRadius: "50%",
+          background: color,
+          flexShrink: 0,
+          boxShadow: `0 0 6px ${color}`,
+          animation: "classy-dot 1.4s ease-in-out infinite",
+        }}
+      />
+
+      {/* Mini eq bars */}
+      <div style={{ display: "flex", alignItems: "flex-end", gap: "2px", height: "12px" }} aria-hidden="true">
+        {[
+          { anim: "classy-bar-1", delay: "0s" },
+          { anim: "classy-bar-2", delay: "0.15s" },
+          { anim: "classy-bar-3", delay: "0.07s" },
+        ].map((b, i) => (
+          <span
+            key={i}
+            style={{
+              display: "block",
+              width: "2px",
+              height: "3px",
+              borderRadius: "1px",
+              backgroundColor: color,
+              animation: `${b.anim} 0.8s ease-in-out infinite`,
+              animationDelay: b.delay,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Label */}
+      <span
+        style={{
+          fontSize: "12px",
+          fontWeight: 600,
+          letterSpacing: "0.04em",
+          color: "rgba(255,255,255,0.92)",
+          whiteSpace: "nowrap",
+        }}
+      >
+        Tap to Unmute
+      </span>
     </button>
   );
 }
