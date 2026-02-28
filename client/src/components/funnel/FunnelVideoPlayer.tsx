@@ -619,63 +619,60 @@ function useYouTubeApi(): boolean {
 }
 
 function YouTubePlayer({ embedUrl, onReady, playerRef }: YouTubePlayerProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const apiReady = useYouTubeApi();
-  const [iframeId] = useState(() => `yt-player-${Math.random().toString(36).slice(2, 9)}`);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Extract video ID from embed URL
+  const videoId = embedUrl.match(/embed\/([a-zA-Z0-9_-]{11})/)?.[1] ?? "";
+
+  // Build a plain iframe src — no IFrame API constructor, no cookie resume
+  const iframeSrc = videoId
+    ? `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&start=0&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}&rel=0&modestbranding=1`
+    : "";
+
   useEffect(() => {
-    if (!apiReady || !containerRef.current) return;
+    if (!iframeRef.current || !videoId) return;
 
-    // Extract video ID from embed URL
-    const match = embedUrl.match(/embed\/([a-zA-Z0-9_-]{11})/);
-    if (!match) return;
-
-    let hasForceSeek = false;
-
-    const player = new (window.YT!).Player(iframeId, {
-      host: "https://www.youtube-nocookie.com",
-      width: "100%",
-      height: "100%",
-      videoId: match[1],
-      playerVars: {
-        autoplay: 1,
-        mute: 1,
-        start: 0,
-        enablejsapi: 1,
-        origin: window.location.origin,
-        rel: 0,
-        modestbranding: 1,
+    // Expose a minimal "player" interface via postMessage so unmute still works
+    const iframe = iframeRef.current;
+    playerRef.current = {
+      destroy: () => {},
+      unMute: () => {
+        iframe.contentWindow?.postMessage(
+          JSON.stringify({ event: "command", func: "unMute", args: "" }),
+          "*",
+        );
       },
-      events: {
-        onReady: () => {
-          playerRef.current = player;
-          // Force to beginning immediately
-          player.seekTo(0, true);
-          onReady();
-        },
-        onStateChange: (event: { data: number }) => {
-          // PLAYING = 1, BUFFERING = 3
-          // Force seek to 0 on first play AND first buffer — covers all
-          // YouTube resume scenarios (cookies, Google account history)
-          if ((event.data === 1 || event.data === 3) && !hasForceSeek) {
-            hasForceSeek = true;
-            player.seekTo(0, true);
-          }
-        },
+      setVolume: (vol: number) => {
+        iframe.contentWindow?.postMessage(
+          JSON.stringify({ event: "command", func: "setVolume", args: [vol] }),
+          "*",
+        );
       },
-    });
-
-    return () => {
-      try {
-        player.destroy();
-      } catch {
-        // player may already be destroyed
-      }
+      seekTo: (seconds: number) => {
+        iframe.contentWindow?.postMessage(
+          JSON.stringify({ event: "command", func: "seekTo", args: [seconds, true] }),
+          "*",
+        );
+      },
+      getCurrentTime: () => 0,
     };
-  }, [apiReady, embedUrl, iframeId, onReady, playerRef]);
+
+    // Signal ready after a short delay for iframe to initialize
+    const timer = setTimeout(() => onReady(), 1500);
+    return () => clearTimeout(timer);
+  }, [videoId, onReady, playerRef]);
+
+  if (!iframeSrc) return null;
 
   return (
-    <div className="relative aspect-video w-full" ref={containerRef}>
-      <div id={iframeId} className="absolute inset-0 w-full h-full" />
+    <div className="relative aspect-video w-full">
+      <iframe
+        ref={iframeRef}
+        src={iframeSrc}
+        className="absolute inset-0 w-full h-full border-0"
+        allow="autoplay; fullscreen; encrypted-media"
+        allowFullScreen
+      />
     </div>
   );
 }
