@@ -62,9 +62,8 @@ export const funnelRouter = router({
 
         // Create Whop checkout configuration
         const checkoutConfig = await whop.checkoutConfigurations.create({
-          company_id: ENV.whopCompanyId as any,
           plan: {
-            company_id: ENV.whopCompanyId as any,
+            company_id: ENV.whopCompanyId,
             initial_price: product.priceInCents / 100,
             plan_type: "one_time",
             currency: "usd",
