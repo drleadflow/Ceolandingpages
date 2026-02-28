@@ -3,6 +3,7 @@ import { CheckCircle2, ClipboardList, ExternalLink, Users, BookOpen } from "luci
 import { trpc } from "@/lib/trpc";
 import { useFunnel } from "@/contexts/FunnelContext";
 import { FunnelNav } from "@/components/funnel/FunnelNav";
+import { FunnelVideoPlayer } from "@/components/funnel/FunnelVideoPlayer";
 import { getSessionId } from "@/lib/funnelTracking";
 
 const PREP_ITEMS = [
@@ -60,21 +61,20 @@ export default function CallPrepPage() {
           >
             {cmsContent?.subheadline ?? "Get the Most Out of Your Strategy Call"}
           </h2>
-          <div className="overflow-hidden rounded-2xl border border-[var(--titan-border)] bg-black shadow-sm">
-            {cmsContent?.videoUrl ? (
-              <iframe
-                src={cmsContent.videoUrl}
-                className="aspect-video w-full border-0"
-                title="Call Prep Video"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            ) : (
+          {cmsContent?.videoUrl ? (
+            <FunnelVideoPlayer
+              videoUrl={cmsContent.videoUrl}
+              thumbnailUrl={cmsContent.heroImageUrl}
+              overlayStyle={(cmsContent.videoOverlayStyle as any) ?? "front-and-center"}
+              title="Call Prep Video"
+            />
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-[var(--titan-border)] bg-black shadow-sm">
               <div className="flex aspect-video items-center justify-center text-slate-400">
                 <p className="text-sm">Video coming soon — check back before your call</p>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Prep Checklist */}

@@ -14,6 +14,7 @@ export const ENV = {
   whopApiKey: process.env.WHOP_API_KEY ?? "",
   whopCompanyId: process.env.WHOP_COMPANY_ID ?? "",
   whopWebhookSecret: process.env.WHOP_WEBHOOK_SECRET ?? "",
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
 };
 
 // Validate critical env vars at startup in production

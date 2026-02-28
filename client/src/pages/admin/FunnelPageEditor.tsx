@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Trash2, Plus, Save, ExternalLink, Eye, EyeOff, Monitor, Smartphone, Upload, X, FileEdit } from "lucide-react";
+import { Trash2, Plus, Save, ExternalLink, Eye, EyeOff, Monitor, Smartphone, Upload, X, FileEdit, Sparkles } from "lucide-react";
+import { AiAssistantPanel } from "@/components/admin/AiAssistantPanel";
 
 type PageSlug = "sales" | "upsell" | "downsell" | "thank-you" | "book-session" | "call-prep";
 
@@ -45,6 +46,7 @@ interface FormState {
   salePriceCents: string;
   heroImageUrl: string;
   videoUrl: string;
+  videoOverlayStyle: string;
   senjaWidgetId: string;
   valueStackItems: string[];
   faqItems: FaqItem[];
@@ -60,6 +62,7 @@ const EMPTY_FORM: FormState = {
   salePriceCents: "",
   heroImageUrl: "",
   videoUrl: "",
+  videoOverlayStyle: "front-and-center",
   senjaWidgetId: "",
   valueStackItems: [],
   faqItems: [],
@@ -106,6 +109,7 @@ function dataToForm(data: Record<string, unknown>): FormState {
     salePriceCents: data.salePriceCents != null ? String(data.salePriceCents) : "",
     heroImageUrl: String(data.heroImageUrl ?? ""),
     videoUrl: String(data.videoUrl ?? ""),
+    videoOverlayStyle: String(data.videoOverlayStyle ?? "front-and-center"),
     senjaWidgetId: String(data.senjaWidgetId ?? ""),
     valueStackItems: parseValueStack(data.valueStackItems),
     faqItems: parseFaqItems(data.faqItems),
@@ -124,6 +128,7 @@ function formToPayload(slug: PageSlug, form: FormState) {
     salePriceCents: form.salePriceCents !== "" ? Number(form.salePriceCents) : undefined,
     heroImageUrl: form.heroImageUrl || undefined,
     videoUrl: form.videoUrl || undefined,
+    videoOverlayStyle: form.videoOverlayStyle || undefined,
     senjaWidgetId: form.senjaWidgetId || undefined,
     valueStackItems: JSON.stringify(form.valueStackItems),
     faqItems: JSON.stringify(form.faqItems),
@@ -319,6 +324,7 @@ function PageEditorPanel({ slug, showPreview }: PageEditorPanelProps) {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [notFound, setNotFound] = useState(false);
   const [previewRefreshKey, setPreviewRefreshKey] = useState(0);
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
   const { data, error, isLoading } = trpc.funnelAdmin.pages.get.useQuery(
     { slug },
@@ -426,15 +432,27 @@ function PageEditorPanel({ slug, showPreview }: PageEditorPanelProps) {
             No content saved yet — fill in the fields below and save.
           </div>
         )}
-        <a
-          href={liveUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="ml-auto inline-flex items-center gap-2 rounded-md border border-slate-600 px-3 py-1.5 text-sm text-slate-300 transition hover:bg-slate-700 hover:text-slate-100"
-        >
-          <ExternalLink className="h-3.5 w-3.5" />
-          View Live Page
-        </a>
+        <div className="ml-auto flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setAiPanelOpen(true)}
+            className="border-violet-500/40 text-violet-300 hover:bg-violet-500/10 hover:text-violet-200"
+          >
+            <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+            AI Assistant
+          </Button>
+          <a
+            href={liveUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-md border border-slate-600 px-3 py-1.5 text-sm text-slate-300 transition hover:bg-slate-700 hover:text-slate-100"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            View Live Page
+          </a>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -518,13 +536,14 @@ function PageEditorPanel({ slug, showPreview }: PageEditorPanelProps) {
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label className="text-slate-300">Hero Image URL</Label>
+          <Label className="text-slate-300">Video Thumbnail URL</Label>
           <Input
             value={form.heroImageUrl}
             onChange={(e) => setField("heroImageUrl", e.target.value)}
             placeholder="https://..."
             className="bg-slate-800 border-slate-600 text-slate-200 placeholder:text-slate-500"
           />
+          <p className="text-xs text-slate-500">Overrides auto-detected thumbnail. Leave blank for YouTube auto-thumbnails.</p>
         </div>
 
         <div className="space-y-2">
@@ -536,6 +555,21 @@ function PageEditorPanel({ slug, showPreview }: PageEditorPanelProps) {
             className="bg-slate-800 border-slate-600 text-slate-200 placeholder:text-slate-500"
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-slate-300">Video Overlay Style</Label>
+        <select
+          value={form.videoOverlayStyle}
+          onChange={(e) => setField("videoOverlayStyle", e.target.value)}
+          className="w-full rounded-md bg-slate-800 border border-slate-600 text-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+        >
+          <option value="front-and-center">Front &amp; Center (default)</option>
+          <option value="loud">Loud &amp; in Your Face</option>
+          <option value="classy">Classy in the Corner</option>
+          <option value="none">None</option>
+        </select>
+        <p className="text-xs text-slate-500">Controls the "Click to Unmute" overlay shown during smart autoplay.</p>
       </div>
 
       <div className="space-y-2">
@@ -601,21 +635,47 @@ function PageEditorPanel({ slug, showPreview }: PageEditorPanelProps) {
     </div>
   );
 
+  const aiPanel = (
+    <AiAssistantPanel
+      open={aiPanelOpen}
+      onOpenChange={setAiPanelOpen}
+      slug={slug}
+      currentForm={{
+        headline: form.headline,
+        subheadline: form.subheadline,
+        bodyText: form.bodyText,
+        ctaText: form.ctaText,
+        declineText: form.declineText,
+      }}
+      onApplySuggestions={(suggestions) => {
+        setForm((prev) => ({ ...prev, ...suggestions }));
+      }}
+    />
+  );
+
   if (!showPreview) {
-    return editorForm;
+    return (
+      <>
+        {aiPanel}
+        {editorForm}
+      </>
+    );
   }
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-      {/* Editor side */}
-      <div className="overflow-y-auto max-h-[calc(100vh-220px)] pr-2">
-        {editorForm}
+    <>
+      {aiPanel}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Editor side */}
+        <div className="overflow-y-auto max-h-[calc(100vh-220px)] pr-2">
+          {editorForm}
+        </div>
+        {/* Preview side */}
+        <div className="hidden xl:block rounded-lg border border-slate-700 overflow-hidden h-[calc(100vh-220px)]">
+          <LivePreview slug={slug} refreshKey={previewRefreshKey} />
+        </div>
       </div>
-      {/* Preview side */}
-      <div className="hidden xl:block rounded-lg border border-slate-700 overflow-hidden h-[calc(100vh-220px)]">
-        <LivePreview slug={slug} refreshKey={previewRefreshKey} />
-      </div>
-    </div>
+    </>
   );
 }
 

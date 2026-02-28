@@ -10,6 +10,7 @@ import { ValueStack } from "@/components/funnel/ValueStack";
 import { PricingBlock } from "@/components/funnel/PricingBlock";
 import { GuaranteeBlock } from "@/components/funnel/GuaranteeBlock";
 import { SenjaTestimonials } from "@/components/funnel/SenjaTestimonials";
+import { FunnelVideoPlayer } from "@/components/funnel/FunnelVideoPlayer";
 import { getSessionId } from "@/lib/funnelTracking";
 
 const VAULT_ITEMS = [
@@ -52,6 +53,9 @@ export default function UpsellPage() {
     originalPrice: (variant?.contentOverrides?.originalPrice as number) ?? cmsContent?.originalPrice ?? 1997,
     salePrice: (variant?.contentOverrides?.salePrice as number) ?? cmsContent?.salePrice ?? 997,
     valueStackItems: cmsContent?.valueStackItems ? JSON.parse(cmsContent.valueStackItems) as string[] : VAULT_ITEMS,
+    videoUrl: cmsContent?.videoUrl ?? null,
+    heroImageUrl: cmsContent?.heroImageUrl ?? null,
+    videoOverlayStyle: cmsContent?.videoOverlayStyle ?? "front-and-center",
   };
 
   // Products query for installment plan
@@ -141,6 +145,18 @@ export default function UpsellPage() {
       <div className="mx-auto mt-8 max-w-sm px-4">
         <CountdownTimer />
       </div>
+
+      {/* Video */}
+      {content.videoUrl && (
+        <div className="mx-auto mt-8 max-w-3xl px-4">
+          <FunnelVideoPlayer
+            videoUrl={content.videoUrl}
+            thumbnailUrl={content.heroImageUrl}
+            overlayStyle={content.videoOverlayStyle as any}
+            title="Upsell Video"
+          />
+        </div>
+      )}
 
       {/* Value Stack */}
       <section className="mx-auto max-w-3xl px-4 py-10">

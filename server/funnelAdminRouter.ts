@@ -3,7 +3,10 @@ import { eq, desc, sql, count, sum, and } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { nanoid } from "nanoid";
 import { router, adminProcedure, publicProcedure } from "./_core/trpc";
+import { ENV } from "./_core/env";
 import { getDb } from "./db";
+import { checkRateLimit, getRateLimitIdentifier } from "./rateLimit";
+import { buildAiSystemPrompt, validateAiSuggestions } from "./funnelAiPrompts";
 import {
   products,
   funnelPageContent,
@@ -197,6 +200,7 @@ export const funnelAdminRouter = router({
           faqItems: z.string().optional(),
           heroImageUrl: z.string().optional(),
           videoUrl: z.string().optional(),
+          videoOverlayStyle: z.string().optional(),
           senjaWidgetId: z.string().optional(),
           isActive: z.number().optional(),
         }),
@@ -234,6 +238,7 @@ export const funnelAdminRouter = router({
             faqItems: null,
             heroImageUrl: null,
             videoUrl: null,
+            videoOverlayStyle: null,
             senjaWidgetId: null,
             isActive: 1,
             draftContent: JSON.stringify(draftBlob),
@@ -263,7 +268,7 @@ export const funnelAdminRouter = router({
         const allowedFields = [
           "headline", "subheadline", "bodyText", "ctaText", "declineText",
           "originalPrice", "salePrice", "valueStackItems", "faqItems",
-          "heroImageUrl", "videoUrl", "senjaWidgetId", "isActive",
+          "heroImageUrl", "videoUrl", "videoOverlayStyle", "senjaWidgetId", "isActive",
         ];
         for (const field of allowedFields) {
           if (draft[field] !== undefined) publishSet[field] = draft[field];
@@ -612,6 +617,107 @@ export const funnelAdminRouter = router({
         });
 
         return { success: true };
+      }),
+  }),
+
+  // ── AI Copy Assistant ──────────────────────────────────────────────────────
+
+  ai: router({
+    suggest: adminProcedure
+      .input(
+        z.object({
+          slug: z.string(),
+          prompt: z.string().min(1).max(500),
+          currentContent: z.record(z.string(), z.string()).default({}),
+        }),
+      )
+      .mutation(async ({ input, ctx }) => {
+        // Rate limit: 10 requests/hour/IP
+        const identifier = `ai-suggest:${getRateLimitIdentifier(ctx.req)}`;
+        const rateCheck = await checkRateLimit(identifier, {
+          maxRequests: 10,
+          windowMs: 60 * 60 * 1000,
+        });
+
+        if (!rateCheck.allowed) {
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: `Rate limit exceeded. Try again in ${Math.ceil((rateCheck.resetAt - Date.now()) / 60000)} minutes.`,
+          });
+        }
+
+        if (!ENV.anthropicApiKey) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "ANTHROPIC_API_KEY is not configured",
+          });
+        }
+
+        const systemPrompt = buildAiSystemPrompt(input.slug, input.currentContent);
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000);
+
+        const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "x-api-key": ENV.anthropicApiKey,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: "claude-haiku-4-5-20251001",
+            max_tokens: 1024,
+            system: systemPrompt,
+            messages: [{ role: "user", content: input.prompt }],
+          }),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeout);
+
+        if (!anthropicResponse.ok) {
+          const errorText = await anthropicResponse.text();
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `AI request failed: ${anthropicResponse.status} – ${errorText}`,
+          });
+        }
+
+        const anthropicResult = await anthropicResponse.json() as {
+          content: Array<{ type: string; text?: string }>;
+        };
+
+        const rawContent = anthropicResult.content
+          ?.find((block) => block.type === "text")?.text;
+
+        if (!rawContent) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "AI returned an empty response",
+          });
+        }
+
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(rawContent);
+        } catch {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "AI returned invalid JSON",
+          });
+        }
+
+        const validated = validateAiSuggestions(parsed);
+
+        if (Object.keys(validated.suggestions).length === 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "AI could not generate any suggestions for this prompt. Try being more specific.",
+          });
+        }
+
+        return validated;
       }),
   }),
 });

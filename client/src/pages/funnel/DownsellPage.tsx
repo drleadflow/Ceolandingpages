@@ -8,6 +8,7 @@ import { FunnelProgressBar } from "@/components/funnel/FunnelProgressBar";
 import { ValueStack } from "@/components/funnel/ValueStack";
 import { PricingBlock } from "@/components/funnel/PricingBlock";
 import { GuaranteeBlock } from "@/components/funnel/GuaranteeBlock";
+import { FunnelVideoPlayer } from "@/components/funnel/FunnelVideoPlayer";
 import { getSessionId } from "@/lib/funnelTracking";
 
 const SESSION_ITEMS = [
@@ -43,6 +44,9 @@ export default function DownsellPage() {
     originalPrice: (variant?.contentOverrides?.originalPrice as number) ?? cmsContent?.originalPrice ?? 497,
     salePrice: (variant?.contentOverrides?.salePrice as number) ?? cmsContent?.salePrice ?? 297,
     valueStackItems: cmsContent?.valueStackItems ? JSON.parse(cmsContent.valueStackItems) as string[] : SESSION_ITEMS,
+    videoUrl: cmsContent?.videoUrl ?? null,
+    heroImageUrl: cmsContent?.heroImageUrl ?? null,
+    videoOverlayStyle: cmsContent?.videoOverlayStyle ?? "front-and-center",
   };
 
   const trackEvent = trpc.funnelAdmin.events.track.useMutation();
@@ -116,6 +120,18 @@ export default function DownsellPage() {
           {content.subheadline ?? "Get Dr. Emeka's undivided attention for a full hour. Walk away with a custom growth plan designed specifically for your practice — no fluff, just actionable strategy."}
         </p>
       </section>
+
+      {/* Video */}
+      {content.videoUrl && (
+        <div className="mx-auto max-w-2xl px-4">
+          <FunnelVideoPlayer
+            videoUrl={content.videoUrl}
+            thumbnailUrl={content.heroImageUrl}
+            overlayStyle={content.videoOverlayStyle as any}
+            title="Downsell Video"
+          />
+        </div>
+      )}
 
       <section className="mx-auto max-w-md px-4">
         <ValueStack items={content.valueStackItems} />

@@ -172,6 +172,7 @@ export const funnelPageContent = mysqlTable("funnelPageContent", {
   faqItems: text("faqItems"), // JSON array of {q, a}
   heroImageUrl: varchar("heroImageUrl", { length: 500 }),
   videoUrl: varchar("videoUrl", { length: 500 }),
+  videoOverlayStyle: varchar("videoOverlayStyle", { length: 50 }),
   senjaWidgetId: varchar("senjaWidgetId", { length: 255 }),
   draftContent: text("draftContent"), // JSON blob of all editable fields (unpublished draft)
   isActive: int("isActive").default(1).notNull(),

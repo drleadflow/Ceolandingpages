@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { WhopCheckoutEmbed } from "@whop/checkout/react";
-import { Loader2, Play, Users, TrendingUp, Award, ChevronDown } from "lucide-react";
+import { Loader2, Users, TrendingUp, Award, ChevronDown } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useFunnel } from "@/contexts/FunnelContext";
 import { FunnelNav } from "@/components/funnel/FunnelNav";
@@ -12,6 +12,7 @@ import { ValueStack } from "@/components/funnel/ValueStack";
 import { PricingBlock } from "@/components/funnel/PricingBlock";
 import { GuaranteeBlock } from "@/components/funnel/GuaranteeBlock";
 import { SenjaTestimonials } from "@/components/funnel/SenjaTestimonials";
+import { FunnelVideoPlayer } from "@/components/funnel/FunnelVideoPlayer";
 import { getSessionId } from "@/lib/funnelTracking";
 
 const formSchema = z.object({
@@ -83,6 +84,9 @@ export default function SalesPage() {
     salePrice: (variant?.contentOverrides?.salePrice as number) ?? cmsContent?.salePrice ?? 197,
     valueStackItems: cmsContent?.valueStackItems ? JSON.parse(cmsContent.valueStackItems) as string[] : VALUE_ITEMS,
     faqItems: cmsContent?.faqItems ? JSON.parse(cmsContent.faqItems) as Array<{q: string; a: string}> : FAQ_ITEMS,
+    videoUrl: cmsContent?.videoUrl ?? null,
+    heroImageUrl: cmsContent?.heroImageUrl ?? null,
+    videoOverlayStyle: cmsContent?.videoOverlayStyle ?? "front-and-center",
   };
 
   // Event tracking
@@ -158,14 +162,25 @@ export default function SalesPage() {
           {content.subheadline ?? "Stop wasting money on ads that don't convert. Learn the proven system used by 500+ health professionals to predictably generate high-quality patient leads on autopilot."}
         </p>
 
-        {/* VSL Placeholder */}
-        <div className="mx-auto mb-8 max-w-3xl overflow-hidden rounded-2xl border border-[var(--titan-border)] bg-gray-900 shadow-xl" style={{ aspectRatio: "16/9" }}>
-          <div className="flex h-full items-center justify-center">
-            <button className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition hover:bg-white/30">
-              <Play className="ml-1 h-8 w-8 text-white" fill="white" />
-            </button>
+        {/* VSL Video */}
+        {content.videoUrl ? (
+          <div className="mx-auto mb-8 max-w-3xl">
+            <FunnelVideoPlayer
+              videoUrl={content.videoUrl}
+              thumbnailUrl={content.heroImageUrl}
+              overlayStyle={content.videoOverlayStyle as any}
+              title="Sales Video"
+            />
           </div>
-        </div>
+        ) : (
+          <div className="mx-auto mb-8 max-w-3xl overflow-hidden rounded-2xl border border-[var(--titan-border)] bg-gray-900 shadow-xl" style={{ aspectRatio: "16/9" }}>
+            <div className="flex h-full items-center justify-center">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+                <span className="text-white text-sm">No video set</span>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Social Proof Bar */}
