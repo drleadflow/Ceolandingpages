@@ -629,6 +629,8 @@ function YouTubePlayer({ embedUrl, onReady, playerRef }: YouTubePlayerProps) {
     const match = embedUrl.match(/embed\/([a-zA-Z0-9_-]{11})/);
     if (!match) return;
 
+    let hasForceSeek = false;
+
     const player = new (window.YT!).Player(iframeId, {
       host: "https://www.youtube-nocookie.com",
       width: "100%",
@@ -646,7 +648,18 @@ function YouTubePlayer({ embedUrl, onReady, playerRef }: YouTubePlayerProps) {
       events: {
         onReady: () => {
           playerRef.current = player;
+          // Force to beginning immediately
+          player.seekTo(0, true);
           onReady();
+        },
+        onStateChange: (event: { data: number }) => {
+          // PLAYING = 1, BUFFERING = 3
+          // Force seek to 0 on first play AND first buffer — covers all
+          // YouTube resume scenarios (cookies, Google account history)
+          if ((event.data === 1 || event.data === 3) && !hasForceSeek) {
+            hasForceSeek = true;
+            player.seekTo(0, true);
+          }
         },
       },
     });
