@@ -93,6 +93,44 @@ export async function pushLeadToGHL(payload: GHLLeadPayload): Promise<boolean> {
   }
 }
 
+/**
+ * Push a purchase to Zapier for Skool course invite.
+ * Fires in parallel with GHL — does not block.
+ */
+export async function pushToZapier(payload: { firstName: string; email: string; product: string; amount: number }): Promise<boolean> {
+  const url = payload.product === "Health Pro CEO Vault"
+    ? ENV.zapierVaultUrl
+    : payload.product === "FB Ads Mastery Course"
+      ? ENV.zapierCourseUrl
+      : "";
+
+  if (!url) return false;
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        first_name: payload.firstName,
+        email: payload.email,
+        purchase_product: payload.product,
+        purchase_amount: String(payload.amount),
+      }),
+    });
+
+    if (!response.ok) {
+      logger.warn({ status: response.status, product: payload.product }, "Zapier webhook returned non-OK");
+      return false;
+    }
+
+    logger.info({ email: payload.email, product: payload.product }, "Pushed to Zapier for Skool invite");
+    return true;
+  } catch (error) {
+    logger.error({ err: error }, "Failed to push to Zapier");
+    return false;
+  }
+}
+
 interface GHLPurchasePayload {
   firstName: string;
   email: string;

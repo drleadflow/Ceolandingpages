@@ -14,6 +14,8 @@ export const ENV = {
   ghlWebhookCourseUrl: process.env.GHL_WEBHOOK_COURSE_URL ?? "",
   ghlWebhookVaultUrl: process.env.GHL_WEBHOOK_VAULT_URL ?? "",
   ghlWebhookSessionUrl: process.env.GHL_WEBHOOK_SESSION_URL ?? "",
+  zapierCourseUrl: process.env.ZAPIER_COURSE_URL ?? "",
+  zapierVaultUrl: process.env.ZAPIER_VAULT_URL ?? "",
   whopApiKey: process.env.WHOP_API_KEY ?? "",
   whopCompanyId: process.env.WHOP_COMPANY_ID ?? "",
   whopWebhookSecret: process.env.WHOP_WEBHOOK_SECRET ?? "",

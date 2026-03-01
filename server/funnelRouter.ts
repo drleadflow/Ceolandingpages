@@ -10,7 +10,7 @@ import {
   funnelOrders,
   funnelOrderItems,
 } from "../drizzle/schema";
-import { pushPurchaseToGHL } from "./ghlWebhook";
+import { pushPurchaseToGHL, pushToZapier } from "./ghlWebhook";
 import { logger } from "./_core/logger";
 
 export const funnelRouter = router({
@@ -174,9 +174,16 @@ export const funnelRouter = router({
             firstName: order.firstName,
             email: order.email,
             tag: "fb-ads-course-buyer",
-            product: "FB Ads Course",
+            product: "FB Ads Mastery Course",
             amount: 197,
           }).catch((err) => logger.error({ err }, "GHL push failed for course purchase"));
+
+          pushToZapier({
+            firstName: order.firstName,
+            email: order.email,
+            product: "FB Ads Mastery Course",
+            amount: 197,
+          }).catch((err) => logger.error({ err }, "Zapier push failed for course purchase"));
         }
 
         return { success: true };
@@ -265,6 +272,13 @@ export const funnelRouter = router({
           amount: 997,
         }).catch((err) => logger.error({ err }, "GHL push failed for vault purchase"));
 
+        pushToZapier({
+          firstName: order.firstName,
+          email: order.email,
+          product: "Health Pro CEO Vault",
+          amount: 997,
+        }).catch((err) => logger.error({ err }, "Zapier push failed for vault purchase"));
+
         return {
           success: true,
           paymentId: payment.id,
@@ -343,7 +357,7 @@ export const funnelRouter = router({
         pushPurchaseToGHL({
           firstName: order.firstName,
           email: order.email,
-          tag: "session-booked",
+          tag: "strategy-session-buyer",
           product: "Strategy Session",
           amount: 297,
         }).catch((err) => logger.error({ err }, "GHL push failed for session purchase"));
