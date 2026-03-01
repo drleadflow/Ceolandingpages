@@ -124,10 +124,14 @@ export default function SalesPage() {
   const handleCheckoutComplete = async (planId: string, receiptId?: string) => {
     if (!checkoutData) return;
 
-    await confirmMutation.mutateAsync({
-      orderId: checkoutData.orderId,
-      whopPaymentId: receiptId,
-    });
+    try {
+      await confirmMutation.mutateAsync({
+        orderId: checkoutData.orderId,
+        whopPaymentId: receiptId,
+      });
+    } catch (err) {
+      console.error("Confirm purchase failed:", err);
+    }
     addProduct("fb-ads-course");
     trackEvent.mutate({
       sessionId,
@@ -137,6 +141,14 @@ export default function SalesPage() {
       splitTestVariant: variant?.variantId,
     });
     navigate("/offer/vault");
+  };
+
+  const handleCheckoutStateChange = (state: string) => {
+    console.log("[Whop Checkout State]", state);
+    // If checkout completes but onComplete doesn't fire, catch it here
+    if (state === "completed" && checkoutData) {
+      handleCheckoutComplete("", undefined);
+    }
   };
 
   return (
@@ -281,6 +293,7 @@ export default function SalesPage() {
                 setupFutureUsage="off_session"
                 skipRedirect
                 onComplete={handleCheckoutComplete}
+                onStateChange={handleCheckoutStateChange}
                 fallback={
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
