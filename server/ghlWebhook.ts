@@ -102,12 +102,30 @@ interface GHLPurchasePayload {
 }
 
 /**
+ * Resolve the GHL webhook URL for a given product tag.
+ * Each product has its own GHL webhook trigger for separate workflows.
+ */
+function getWebhookUrlForProduct(tag: string): string {
+  switch (tag) {
+    case "fb-ads-course-buyer":
+      return ENV.ghlWebhookCourseUrl || ENV.ghlWebhookUrl;
+    case "vault-member":
+      return ENV.ghlWebhookVaultUrl || ENV.ghlWebhookUrl;
+    case "strategy-session-buyer":
+      return ENV.ghlWebhookSessionUrl || ENV.ghlWebhookUrl;
+    default:
+      return ENV.ghlWebhookUrl;
+  }
+}
+
+/**
  * Push a purchase event to GoHighLevel via webhook.
- * Adds product-specific tags to the contact.
+ * Routes to product-specific webhook URLs for separate GHL workflows.
  */
 export async function pushPurchaseToGHL(payload: GHLPurchasePayload): Promise<boolean> {
-  if (!ENV.ghlWebhookUrl) {
-    logger.debug("GHL webhook not configured, skipping purchase push");
+  const webhookUrl = getWebhookUrlForProduct(payload.tag);
+  if (!webhookUrl) {
+    logger.debug("GHL purchase webhook not configured, skipping");
     return false;
   }
 
@@ -121,7 +139,7 @@ export async function pushPurchaseToGHL(payload: GHLPurchasePayload): Promise<bo
       purchase_amount: String(payload.amount),
     };
 
-    const response = await fetch(ENV.ghlWebhookUrl, {
+    const response = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -133,7 +151,7 @@ export async function pushPurchaseToGHL(payload: GHLPurchasePayload): Promise<bo
       return false;
     }
 
-    logger.info({ email: payload.email, product: payload.product }, "Purchase pushed to GHL");
+    logger.info({ email: payload.email, product: payload.product, webhookUrl }, "Purchase pushed to GHL");
     return true;
   } catch (error) {
     logger.error({ err: error }, "Failed to push purchase to GHL");
