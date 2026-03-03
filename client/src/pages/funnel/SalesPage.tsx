@@ -67,7 +67,10 @@ export default function SalesPage() {
 
   // Dual-path flow state
   const [showDualPath, setShowDualPath] = useState(false);
-  const [selectedPath, setSelectedPath] = useState<"courses" | "original" | null>(null);
+  const [leadCaptured, setLeadCaptured] = useState(false);
+  const [capturedLead, setCapturedLead] = useState<FormValues | null>(null);
+  const [selectedPath, setSelectedPath] = useState<"courses" | null>(null);
+  const pathSelectorRef = useRef<HTMLDivElement>(null);
   const pricingTiersRef = useRef<HTMLDivElement>(null);
 
   // Check URL param for flow variant: ?flow=dual enables the path selector
@@ -77,6 +80,27 @@ export default function SalesPage() {
       setShowDualPath(true);
     }
   }, []);
+
+  // Dual-path: capture lead first, then reveal path selector
+  const dualPathForm = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { firstName: "", email: "", phone: "" },
+  });
+
+  const onDualPathLeadCapture = async (values: FormValues) => {
+    setCapturedLead(values);
+    setLeadCaptured(true);
+    trackEvent.mutate({
+      sessionId,
+      eventType: "checkout_start",
+      pageSlug: "sales",
+      splitTestVariant: variant?.variantId,
+    });
+    fireEvent("checkout_start");
+    setTimeout(() => {
+      pathSelectorRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  };
 
   const handleSelectCourses = () => {
     setSelectedPath("courses");
@@ -235,10 +259,6 @@ export default function SalesPage() {
           </div>
         )}
 
-        {/* Dual-Path Selector — shown when ?flow=dual */}
-        {showDualPath && (
-          <PathSelector onSelectCourses={handleSelectCourses} onSelectAgency={handleSelectAgency} />
-        )}
       </section>
 
       {/* Social Proof Bar */}
@@ -275,107 +295,185 @@ export default function SalesPage() {
         </div>
       </section>
 
-      {/* Pricing Tiers — shown when user selects "Courses" path */}
-      {showDualPath && selectedPath === "courses" && (
-        <div ref={pricingTiersRef}>
-          <PricingTiers
-            onPurchaseComplete={handleTierPurchaseComplete}
-            sessionId={sessionId}
-            splitTestVariant={variant?.variantId}
-          />
-        </div>
-      )}
-
-      {/* Original Pricing + Checkout — hidden when dual-path courses flow is active */}
-      <section id="checkout" className={`mx-auto max-w-lg px-4 py-12 ${showDualPath && selectedPath === "courses" ? "hidden" : ""}`}>
-        <PricingBlock originalPrice={content.originalPrice} salePrice={content.salePrice} label="Special Launch Price" />
-
-        <div className="mt-8 rounded-2xl border border-[var(--titan-border)] bg-white p-6 shadow-lg">
-          {!checkoutData ? (
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium" style={{ color: "var(--titan-text-primary)" }}>
-                  First Name
-                </label>
-                <input
-                  {...form.register("firstName")}
-                  placeholder="Your first name"
-                  className="w-full rounded-lg border border-[var(--titan-border)] px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                />
-                {form.formState.errors.firstName && (
-                  <p className="mt-1 text-xs text-red-500">{form.formState.errors.firstName.message}</p>
-                )}
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium" style={{ color: "var(--titan-text-primary)" }}>
-                  Email Address
-                </label>
-                <input
-                  {...form.register("email")}
-                  type="email"
-                  placeholder="you@example.com"
-                  className="w-full rounded-lg border border-[var(--titan-border)] px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                />
-                {form.formState.errors.email && (
-                  <p className="mt-1 text-xs text-red-500">{form.formState.errors.email.message}</p>
-                )}
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium" style={{ color: "var(--titan-text-primary)" }}>
-                  Phone Number <span className="text-xs font-normal text-gray-400">(optional)</span>
-                </label>
-                <input
-                  {...form.register("phone")}
-                  type="tel"
-                  placeholder="(555) 123-4567"
-                  className="w-full rounded-lg border border-[var(--titan-border)] px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={createCheckout.isPending}
-                className="w-full rounded-xl px-8 py-4 text-lg font-bold text-white shadow-lg transition-all hover:shadow-xl disabled:opacity-50"
-                style={{ background: "linear-gradient(135deg, var(--titan-gold) 0%, var(--titan-gold-hover) 100%)" }}
-              >
-                {createCheckout.isPending ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="h-5 w-5 animate-spin" /> Setting up checkout...
-                  </span>
-                ) : (
-                  content.ctaText ?? `Continue to Payment — $${content.salePrice}`
-                )}
-              </button>
-              {createCheckout.isError && (
-                <p className="text-center text-sm text-red-500">
-                  {createCheckout.error.message}
+      {/* === DUAL-PATH FLOW: Lead Capture → Path Selector → Tiers === */}
+      {showDualPath && (
+        <>
+          {/* Step 1: Lead capture form */}
+          {!leadCaptured && (
+            <section id="checkout" className="mx-auto max-w-lg px-4 py-12">
+              <div className="mb-6 text-center">
+                <h2 className="text-2xl font-bold" style={{ color: "var(--titan-text-primary)" }}>
+                  Get Started — It's Free to See Your Options
+                </h2>
+                <p className="mt-2 text-sm" style={{ color: "var(--titan-text-secondary)" }}>
+                  Enter your details below and we'll show you the best path to grow your practice.
                 </p>
-              )}
-            </form>
-          ) : (
-            <div>
-              <WhopCheckoutEmbed
-                sessionId={checkoutData.checkoutConfigId}
-                theme="light"
-                environment={checkoutData.sandbox ? "sandbox" : "production"}
-                prefill={{ email: formValues?.email }}
-                setupFutureUsage="off_session"
-                skipRedirect
-                onComplete={handleCheckoutComplete}
-                onStateChange={handleCheckoutStateChange}
-                fallback={
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+              </div>
+              <div className="rounded-2xl border border-[var(--titan-border)] bg-white p-6 shadow-lg">
+                <form onSubmit={dualPathForm.handleSubmit(onDualPathLeadCapture)} className="space-y-4">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium" style={{ color: "var(--titan-text-primary)" }}>
+                      First Name
+                    </label>
+                    <input
+                      {...dualPathForm.register("firstName")}
+                      placeholder="Your first name"
+                      className="w-full rounded-lg border border-[var(--titan-border)] px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    />
+                    {dualPathForm.formState.errors.firstName && (
+                      <p className="mt-1 text-xs text-red-500">{dualPathForm.formState.errors.firstName.message}</p>
+                    )}
                   </div>
-                }
+                  <div>
+                    <label className="mb-1 block text-sm font-medium" style={{ color: "var(--titan-text-primary)" }}>
+                      Email Address
+                    </label>
+                    <input
+                      {...dualPathForm.register("email")}
+                      type="email"
+                      placeholder="you@example.com"
+                      className="w-full rounded-lg border border-[var(--titan-border)] px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    />
+                    {dualPathForm.formState.errors.email && (
+                      <p className="mt-1 text-xs text-red-500">{dualPathForm.formState.errors.email.message}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium" style={{ color: "var(--titan-text-primary)" }}>
+                      Phone Number <span className="text-xs font-normal text-gray-400">(optional)</span>
+                    </label>
+                    <input
+                      {...dualPathForm.register("phone")}
+                      type="tel"
+                      placeholder="(555) 123-4567"
+                      className="w-full rounded-lg border border-[var(--titan-border)] px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full rounded-xl px-8 py-4 text-lg font-bold text-white shadow-lg transition-all hover:shadow-xl"
+                    style={{ background: "linear-gradient(135deg, var(--titan-gold) 0%, var(--titan-gold-hover) 100%)" }}
+                  >
+                    See Your Options
+                  </button>
+                </form>
+              </div>
+            </section>
+          )}
+
+          {/* Step 2: Path selector — shown after lead is captured */}
+          {leadCaptured && (
+            <div ref={pathSelectorRef}>
+              <PathSelector onSelectCourses={handleSelectCourses} onSelectAgency={handleSelectAgency} />
+            </div>
+          )}
+
+          {/* Step 3: Pricing tiers — shown when user selects "Courses" */}
+          {leadCaptured && selectedPath === "courses" && (
+            <div ref={pricingTiersRef}>
+              <PricingTiers
+                onPurchaseComplete={handleTierPurchaseComplete}
+                sessionId={sessionId}
+                splitTestVariant={variant?.variantId}
+                capturedLead={capturedLead ?? undefined}
               />
             </div>
           )}
-        </div>
+        </>
+      )}
 
-        <div className="mt-6">
-          <GuaranteeBlock />
-        </div>
-      </section>
+      {/* === ORIGINAL FLOW: Pricing + Checkout (unchanged) === */}
+      {!showDualPath && (
+        <section id="checkout" className="mx-auto max-w-lg px-4 py-12">
+          <PricingBlock originalPrice={content.originalPrice} salePrice={content.salePrice} label="Special Launch Price" />
+
+          <div className="mt-8 rounded-2xl border border-[var(--titan-border)] bg-white p-6 shadow-lg">
+            {!checkoutData ? (
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium" style={{ color: "var(--titan-text-primary)" }}>
+                    First Name
+                  </label>
+                  <input
+                    {...form.register("firstName")}
+                    placeholder="Your first name"
+                    className="w-full rounded-lg border border-[var(--titan-border)] px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  />
+                  {form.formState.errors.firstName && (
+                    <p className="mt-1 text-xs text-red-500">{form.formState.errors.firstName.message}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium" style={{ color: "var(--titan-text-primary)" }}>
+                    Email Address
+                  </label>
+                  <input
+                    {...form.register("email")}
+                    type="email"
+                    placeholder="you@example.com"
+                    className="w-full rounded-lg border border-[var(--titan-border)] px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  />
+                  {form.formState.errors.email && (
+                    <p className="mt-1 text-xs text-red-500">{form.formState.errors.email.message}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium" style={{ color: "var(--titan-text-primary)" }}>
+                    Phone Number <span className="text-xs font-normal text-gray-400">(optional)</span>
+                  </label>
+                  <input
+                    {...form.register("phone")}
+                    type="tel"
+                    placeholder="(555) 123-4567"
+                    className="w-full rounded-lg border border-[var(--titan-border)] px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={createCheckout.isPending}
+                  className="w-full rounded-xl px-8 py-4 text-lg font-bold text-white shadow-lg transition-all hover:shadow-xl disabled:opacity-50"
+                  style={{ background: "linear-gradient(135deg, var(--titan-gold) 0%, var(--titan-gold-hover) 100%)" }}
+                >
+                  {createCheckout.isPending ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-5 w-5 animate-spin" /> Setting up checkout...
+                    </span>
+                  ) : (
+                    content.ctaText ?? `Continue to Payment — $${content.salePrice}`
+                  )}
+                </button>
+                {createCheckout.isError && (
+                  <p className="text-center text-sm text-red-500">
+                    {createCheckout.error.message}
+                  </p>
+                )}
+              </form>
+            ) : (
+              <div>
+                <WhopCheckoutEmbed
+                  sessionId={checkoutData.checkoutConfigId}
+                  theme="light"
+                  environment={checkoutData.sandbox ? "sandbox" : "production"}
+                  prefill={{ email: formValues?.email }}
+                  setupFutureUsage="off_session"
+                  skipRedirect
+                  onComplete={handleCheckoutComplete}
+                  onStateChange={handleCheckoutStateChange}
+                  fallback={
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                    </div>
+                  }
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="mt-6">
+            <GuaranteeBlock />
+          </div>
+        </section>
+      )}
 
       {/* FAQ */}
       <section className="mx-auto max-w-2xl px-4 pb-16">

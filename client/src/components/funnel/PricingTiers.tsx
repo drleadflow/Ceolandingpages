@@ -90,9 +90,10 @@ interface PricingTiersProps {
   onPurchaseComplete: (productSlug: string) => void;
   sessionId: string;
   splitTestVariant?: string;
+  capturedLead?: { firstName: string; email: string; phone?: string };
 }
 
-export function PricingTiers({ onPurchaseComplete, sessionId, splitTestVariant }: PricingTiersProps) {
+export function PricingTiers({ onPurchaseComplete, sessionId, splitTestVariant, capturedLead }: PricingTiersProps) {
   const { setOrder, addProduct } = useFunnel();
   const createCheckout = trpc.funnel.checkout.createCheckout.useMutation();
   const confirmMutation = trpc.funnel.checkout.confirmPurchase.useMutation();
@@ -107,9 +108,23 @@ export function PricingTiers({ onPurchaseComplete, sessionId, splitTestVariant }
     defaultValues: { firstName: "", email: "", phone: "" },
   });
 
-  const handleSelectTier = (slug: string) => {
+  const handleSelectTier = async (slug: string) => {
     setSelectedTier(slug);
     setCheckoutData(null);
+
+    // If lead data was already captured, skip the form and go straight to checkout
+    if (capturedLead) {
+      setFormValues(capturedLead);
+      trackEvent.mutate({
+        sessionId,
+        eventType: "checkout_start",
+        pageSlug: "sales",
+        splitTestVariant,
+      });
+      const result = await createCheckout.mutateAsync(capturedLead);
+      setOrder(result.orderId, capturedLead.email, capturedLead.firstName);
+      setCheckoutData({ checkoutConfigId: result.checkoutConfigId, orderId: result.orderId, sandbox: result.sandbox });
+    }
   };
 
   const onSubmit = async (values: FormValues) => {
@@ -211,13 +226,18 @@ export function PricingTiers({ onPurchaseComplete, sessionId, splitTestVariant }
 
               <button
                 onClick={() => handleSelectTier(tier.slug)}
-                className={`w-full rounded-xl px-6 py-3 text-sm font-bold transition-all ${
+                disabled={isSelected && createCheckout.isPending}
+                className={`w-full rounded-xl px-6 py-3 text-sm font-bold transition-all disabled:opacity-50 ${
                   isSelected
                     ? "bg-blue-600 text-white shadow-md"
                     : "border-2 border-[var(--titan-border)] bg-white text-[var(--titan-text-primary)] hover:border-blue-400 hover:bg-blue-50"
                 }`}
               >
-                {isSelected ? "Selected" : `Get Started — $${tier.salePrice}`}
+                {isSelected && createCheckout.isPending ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Setting up...
+                  </span>
+                ) : isSelected ? "Selected" : `Get Started — $${tier.salePrice}`}
               </button>
             </div>
           );
@@ -232,7 +252,14 @@ export function PricingTiers({ onPurchaseComplete, sessionId, splitTestVariant }
               Complete Your Order — {TIERS.find((t) => t.slug === selectedTier)?.name}
             </h3>
 
-            {!checkoutData ? (
+            {/* If capturedLead exists, skip the form — checkout is initiated on tier select */}
+            {capturedLead && !checkoutData && (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+              </div>
+            )}
+
+            {!capturedLead && !checkoutData ? (
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium" style={{ color: "var(--titan-text-primary)" }}>
@@ -290,7 +317,7 @@ export function PricingTiers({ onPurchaseComplete, sessionId, splitTestVariant }
                   <p className="text-center text-sm text-red-500">{createCheckout.error.message}</p>
                 )}
               </form>
-            ) : (
+            ) : checkoutData ? (
               <WhopCheckoutEmbed
                 sessionId={checkoutData.checkoutConfigId}
                 theme="light"
@@ -306,7 +333,7 @@ export function PricingTiers({ onPurchaseComplete, sessionId, splitTestVariant }
                   </div>
                 }
               />
-            )}
+            ) : null}
           </div>
 
           <div className="mt-6">
