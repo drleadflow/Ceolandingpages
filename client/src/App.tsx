@@ -23,6 +23,7 @@ import DownsellPage from "./pages/funnel/DownsellPage";
 import ThankYouPage from "./pages/funnel/ThankYouPage";
 import BookingPage from "./pages/funnel/BookingPage";
 import CallPrepPage from "./pages/funnel/CallPrepPage";
+import AgencyPage from "./pages/funnel/AgencyPage";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -39,6 +40,7 @@ function Router() {
       <Route path="/thank-you" component={ThankYouPage} />
       <Route path="/book-session" component={BookingPage} />
       <Route path="/call-prep" component={CallPrepPage} />
+      <Route path="/agency" component={AgencyPage} />
       <Route path="/admin">
         <AdminLayout><AdminLeads /></AdminLayout>
       </Route>

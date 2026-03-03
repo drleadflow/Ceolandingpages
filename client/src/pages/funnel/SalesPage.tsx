@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -13,6 +13,8 @@ import { PricingBlock } from "@/components/funnel/PricingBlock";
 import { GuaranteeBlock } from "@/components/funnel/GuaranteeBlock";
 import { SenjaTestimonials } from "@/components/funnel/SenjaTestimonials";
 import { FunnelVideoPlayer } from "@/components/funnel/FunnelVideoPlayer";
+import { PathSelector } from "@/components/funnel/PathSelector";
+import { PricingTiers } from "@/components/funnel/PricingTiers";
 import { getSessionId } from "@/lib/funnelTracking";
 import { usePixelTracking } from "@/hooks/usePixelTracking";
 
@@ -62,6 +64,38 @@ export default function SalesPage() {
   const [checkoutData, setCheckoutData] = useState<{ checkoutConfigId: string; orderId: number; sandbox?: boolean } | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [formValues, setFormValues] = useState<FormValues | null>(null);
+
+  // Dual-path flow state
+  const [showDualPath, setShowDualPath] = useState(false);
+  const [selectedPath, setSelectedPath] = useState<"courses" | "original" | null>(null);
+  const pricingTiersRef = useRef<HTMLDivElement>(null);
+
+  // Check URL param for flow variant: ?flow=dual enables the path selector
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("flow") === "dual") {
+      setShowDualPath(true);
+    }
+  }, []);
+
+  const handleSelectCourses = () => {
+    setSelectedPath("courses");
+    setTimeout(() => {
+      pricingTiersRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  };
+
+  const handleSelectAgency = () => {
+    navigate("/agency");
+  };
+
+  const handleTierPurchaseComplete = (productSlug: string) => {
+    if (productSlug === "ceo-vault" || productSlug === "strategy-session") {
+      navigate("/book-session");
+    } else {
+      navigate("/thank-you");
+    }
+  };
 
   // CMS content — use draft preview when ?preview=true
   const isPreview = new URLSearchParams(window.location.search).has("preview");
@@ -200,6 +234,11 @@ export default function SalesPage() {
             </div>
           </div>
         )}
+
+        {/* Dual-Path Selector — shown when ?flow=dual */}
+        {showDualPath && (
+          <PathSelector onSelectCourses={handleSelectCourses} onSelectAgency={handleSelectAgency} />
+        )}
       </section>
 
       {/* Social Proof Bar */}
@@ -236,8 +275,19 @@ export default function SalesPage() {
         </div>
       </section>
 
-      {/* Pricing + Checkout */}
-      <section id="checkout" className="mx-auto max-w-lg px-4 py-12">
+      {/* Pricing Tiers — shown when user selects "Courses" path */}
+      {showDualPath && selectedPath === "courses" && (
+        <div ref={pricingTiersRef}>
+          <PricingTiers
+            onPurchaseComplete={handleTierPurchaseComplete}
+            sessionId={sessionId}
+            splitTestVariant={variant?.variantId}
+          />
+        </div>
+      )}
+
+      {/* Original Pricing + Checkout — hidden when dual-path courses flow is active */}
+      <section id="checkout" className={`mx-auto max-w-lg px-4 py-12 ${showDualPath && selectedPath === "courses" ? "hidden" : ""}`}>
         <PricingBlock originalPrice={content.originalPrice} salePrice={content.salePrice} label="Special Launch Price" />
 
         <div className="mt-8 rounded-2xl border border-[var(--titan-border)] bg-white p-6 shadow-lg">
