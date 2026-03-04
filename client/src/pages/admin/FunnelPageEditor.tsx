@@ -366,7 +366,7 @@ function LivePreview({ slug, refreshKey }: LivePreviewProps) {
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
   const basePath = SLUG_TO_PATH[slug];
   const separator = basePath.includes("?") ? "&" : "?";
-  const previewUrl = `${window.location.origin}${basePath}${separator}preview=true`;
+  const previewUrl = `${window.location.origin}${basePath}${separator}preview=true&_t=${refreshKey}`;
 
   return (
     <div className="flex flex-col h-full">
