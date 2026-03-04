@@ -240,3 +240,42 @@ export const trackingPixels = mysqlTable("trackingPixels", {
 });
 
 export type TrackingPixel = typeof trackingPixels.$inferSelect;
+
+// ── Mux Video Assets ──
+
+export const muxAssets = mysqlTable("muxAssets", {
+  id: int("id").autoincrement().primaryKey(),
+  muxAssetId: varchar("muxAssetId", { length: 255 }).notNull().unique(),
+  playbackId: varchar("playbackId", { length: 255 }),
+  status: mysqlEnum("muxAssetStatus", ["preparing", "ready", "errored"]).default("preparing").notNull(),
+  duration: int("duration"),
+  filename: varchar("filename", { length: 500 }),
+  title: varchar("title", { length: 255 }),
+  uploadId: varchar("uploadId", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type MuxAsset = typeof muxAssets.$inferSelect;
+
+// ── Video Events (Analytics) ──
+
+export const videoEvents = mysqlTable("videoEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: varchar("sessionId", { length: 100 }).notNull(),
+  pageSlug: varchar("pageSlug", { length: 100 }).notNull(),
+  videoUrl: varchar("videoUrl", { length: 500 }),
+  eventType: mysqlEnum("videoEventType", [
+    "video_play",
+    "video_pause",
+    "video_milestone_25",
+    "video_milestone_50",
+    "video_milestone_75",
+    "video_milestone_100",
+  ]).notNull(),
+  splitTestVariant: varchar("splitTestVariant", { length: 100 }),
+  watchTimeSeconds: int("watchTimeSeconds").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type VideoEvent = typeof videoEvents.$inferSelect;

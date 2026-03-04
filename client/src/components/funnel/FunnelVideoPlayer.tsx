@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Play, Volume2 } from "lucide-react";
+import MuxPlayer from "@mux/mux-player-react";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 type OverlayStyle = "front-and-center" | "loud" | "classy" | "none";
-type VideoSource = "youtube" | "vimeo" | "mp4" | "loom" | "unknown";
+type VideoSource = "youtube" | "vimeo" | "mp4" | "loom" | "mux" | "unknown";
 type PlayerState = "idle" | "playing-muted" | "playing-unmuted";
 
 interface FunnelVideoPlayerProps {
@@ -78,6 +79,16 @@ function parseVideoUrl(url: string): ParsedVideo {
     };
   }
 
+  // Mux playback ID (bare alphanumeric string, 10+ chars, no dots/slashes)
+  if (/^[a-zA-Z0-9]{10,}$/.test(trimmed)) {
+    return {
+      source: "mux",
+      embedUrl: trimmed,
+      videoId: trimmed,
+      thumbnail: `https://image.mux.com/${trimmed}/thumbnail.webp?time=0`,
+    };
+  }
+
   // Unknown / already an embed URL
   return {
     source: "unknown",
@@ -88,7 +99,7 @@ function parseVideoUrl(url: string): ParsedVideo {
 }
 
 function canSmartAutoplay(source: VideoSource): boolean {
-  return source === "mp4" || source === "youtube" || source === "vimeo";
+  return source === "mp4" || source === "youtube" || source === "vimeo" || source === "mux";
 }
 
 // ── Overlay Keyframe Animations ───────────────────────────────────────────────
@@ -764,6 +775,9 @@ export function FunnelVideoPlayer({
           );
         }
         break;
+      case "mux":
+        // MuxPlayer reacts to muted prop change via state
+        break;
     }
 
     setState("playing-unmuted");
@@ -826,6 +840,16 @@ export function FunnelVideoPlayer({
               src={parsed.embedUrl}
               videoRef={videoRef}
               onCanPlay={handleMp4CanPlay}
+            />
+          )}
+
+          {parsed.source === "mux" && (
+            <MuxPlayer
+              playbackId={parsed.videoId ?? ""}
+              autoPlay="muted"
+              className="aspect-video w-full"
+              onCanPlay={() => setPlayerReady(true)}
+              muted={state === "playing-muted"}
             />
           )}
 

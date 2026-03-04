@@ -21,6 +21,8 @@ export const ENV = {
   whopWebhookSecret: process.env.WHOP_WEBHOOK_SECRET ?? "",
   whopSandbox: process.env.WHOP_SANDBOX === "true",
   anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
+  muxTokenId: process.env.MUX_TOKEN_ID ?? "",
+  muxTokenSecret: process.env.MUX_TOKEN_SECRET ?? "",
 };
 
 // Validate critical env vars at startup in production

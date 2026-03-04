@@ -15,6 +15,7 @@ import FunnelPageEditor from "./pages/admin/FunnelPageEditor";
 import FunnelAnalytics from "./pages/admin/FunnelAnalytics";
 import FunnelSplitTests from "./pages/admin/FunnelSplitTests";
 import TrackingSettings from "./pages/admin/TrackingSettings";
+import VideoLibrary from "./pages/admin/VideoLibrary";
 import PublicRoadmap from "./pages/PublicRoadmap";
 import SharedPlaybook from "./pages/SharedPlaybook";
 import SalesPage from "./pages/funnel/SalesPage";
@@ -24,6 +25,7 @@ import ThankYouPage from "./pages/funnel/ThankYouPage";
 import BookingPage from "./pages/funnel/BookingPage";
 import CallPrepPage from "./pages/funnel/CallPrepPage";
 import AgencyPage from "./pages/funnel/AgencyPage";
+import VideoPlayerPage from "./pages/funnel/VideoPlayerPage";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -41,6 +43,7 @@ function Router() {
       <Route path="/book-session" component={BookingPage} />
       <Route path="/call-prep" component={CallPrepPage} />
       <Route path="/agency" component={AgencyPage} />
+      <Route path="/v/:playbackId" component={VideoPlayerPage} />
       <Route path="/admin">
         <AdminLayout><AdminLeads /></AdminLayout>
       </Route>
@@ -61,6 +64,9 @@ function Router() {
       </Route>
       <Route path="/admin/funnel/tracking">
         <AdminLayout><TrackingSettings /></AdminLayout>
+      </Route>
+      <Route path="/admin/video-library">
+        <AdminLayout><VideoLibrary /></AdminLayout>
       </Route>
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}

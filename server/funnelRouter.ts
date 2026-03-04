@@ -9,6 +9,7 @@ import {
   products,
   funnelOrders,
   funnelOrderItems,
+  videoEvents,
 } from "../drizzle/schema";
 import { pushPurchaseToGHL, pushToZapier } from "./ghlWebhook";
 import { fireFacebookCapi, getCapiPixelsForPage, fireHyrosSale, getHyrosPixelsForPage } from "./trackingService";
@@ -485,6 +486,42 @@ export const funnelRouter = router({
           ...order,
           items,
         };
+      }),
+  }),
+
+  video: router({
+    trackEvent: publicProcedure
+      .input(
+        z.object({
+          sessionId: z.string().min(1),
+          pageSlug: z.string().min(1),
+          videoUrl: z.string().optional(),
+          eventType: z.enum([
+            "video_play",
+            "video_pause",
+            "video_milestone_25",
+            "video_milestone_50",
+            "video_milestone_75",
+            "video_milestone_100",
+          ]),
+          splitTestVariant: z.string().optional(),
+          watchTimeSeconds: z.number().optional(),
+        }),
+      )
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+        await db.insert(videoEvents).values({
+          sessionId: input.sessionId,
+          pageSlug: input.pageSlug,
+          videoUrl: input.videoUrl ?? null,
+          eventType: input.eventType,
+          splitTestVariant: input.splitTestVariant ?? null,
+          watchTimeSeconds: input.watchTimeSeconds ?? 0,
+        });
+
+        return { success: true };
       }),
   }),
 });

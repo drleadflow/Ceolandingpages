@@ -560,6 +560,14 @@ function PageEditorPanel({ slug, showPreview }: PageEditorPanelProps) {
             placeholder="https://..."
             className="bg-slate-800 border-slate-600 text-slate-200 placeholder:text-slate-500"
           />
+          <a
+            href="/admin/video-library"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-400 hover:text-blue-300 mt-1 inline-block"
+          >
+            Upload via Video Library →
+          </a>
         </div>
       </div>
 

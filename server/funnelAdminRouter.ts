@@ -14,7 +14,10 @@ import {
   splitTests,
   funnelOrderItems,
   trackingPixels,
+  muxAssets,
+  videoEvents,
 } from "../drizzle/schema";
+import { createDirectUpload, getAssetStatus, listAssets, deleteAsset } from "./muxService";
 
 // ── Variant assignment helpers ────────────────────────────────────────────────
 
@@ -469,6 +472,75 @@ export const funnelAdminRouter = router({
 
         return stats;
       }),
+
+    videoEngagement: adminProcedure
+      .input(z.object({ startDate: z.string().optional(), endDate: z.string().optional() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+
+        const dateFilters: ReturnType<typeof sql>[] = [];
+        if (input.startDate) dateFilters.push(sql`${videoEvents.createdAt} >= ${input.startDate}`);
+        if (input.endDate) dateFilters.push(sql`${videoEvents.createdAt} <= ${input.endDate}`);
+
+        const playConditions = [eq(videoEvents.eventType, "video_play"), ...dateFilters];
+        const [playsResult] = await db.select({ total: count() }).from(videoEvents).where(and(...playConditions));
+
+        const milestoneResults = await Promise.all(
+          (["video_milestone_25", "video_milestone_50", "video_milestone_75", "video_milestone_100"] as const).map(async (milestone) => {
+            const conditions = [eq(videoEvents.eventType, milestone), ...dateFilters];
+            const [row] = await db.select({ total: count() }).from(videoEvents).where(and(...conditions));
+            return { milestone, count: row?.total ?? 0 };
+          }),
+        );
+
+        const avgWatchQuery = await db
+          .select({ avg: sql<number>`AVG(${videoEvents.watchTimeSeconds})` })
+          .from(videoEvents)
+          .where(and(eq(videoEvents.eventType, "video_play"), ...dateFilters));
+
+        const totalPlays = playsResult?.total ?? 0;
+        const completions = milestoneResults.find(m => m.milestone === "video_milestone_100")?.count ?? 0;
+        const completionRate = totalPlays > 0 ? (completions / totalPlays) * 100 : 0;
+        const avgWatchTime = Math.round(avgWatchQuery[0]?.avg ?? 0);
+
+        return {
+          totalPlays,
+          avgWatchTime,
+          completionRate,
+          milestones: milestoneResults,
+        };
+      }),
+
+    videoByVariant: adminProcedure
+      .input(z.object({ startDate: z.string().optional(), endDate: z.string().optional() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+
+        const dateFilters: ReturnType<typeof sql>[] = [];
+        if (input.startDate) dateFilters.push(sql`${videoEvents.createdAt} >= ${input.startDate}`);
+        if (input.endDate) dateFilters.push(sql`${videoEvents.createdAt} <= ${input.endDate}`);
+
+        const rows = await db
+          .select({
+            variant: videoEvents.splitTestVariant,
+            plays: sql<number>`SUM(CASE WHEN ${videoEvents.eventType} = 'video_play' THEN 1 ELSE 0 END)`,
+            completions: sql<number>`SUM(CASE WHEN ${videoEvents.eventType} = 'video_milestone_100' THEN 1 ELSE 0 END)`,
+            avgWatch: sql<number>`AVG(${videoEvents.watchTimeSeconds})`,
+          })
+          .from(videoEvents)
+          .where(and(...dateFilters.length > 0 ? dateFilters : [sql`1=1`]))
+          .groupBy(videoEvents.splitTestVariant);
+
+        return rows.map(r => ({
+          variant: r.variant ?? "default",
+          plays: Number(r.plays ?? 0),
+          completions: Number(r.completions ?? 0),
+          completionRate: Number(r.plays) > 0 ? (Number(r.completions) / Number(r.plays)) * 100 : 0,
+          avgWatchTime: Math.round(Number(r.avgWatch ?? 0)),
+        }));
+      }),
   }),
 
   // ── Split Tests ───────────────────────────────────────────────────────────
@@ -726,6 +798,50 @@ export const funnelAdminRouter = router({
           splitTestVariant: input.splitTestVariant ?? null,
         });
 
+        return { success: true };
+      }),
+  }),
+
+  // ── Mux Video Management ───────────────────────────────────────────────────
+
+  mux: router({
+    createUpload: adminProcedure
+      .input(z.object({ filename: z.string().min(1) }))
+      .mutation(async ({ input }) => {
+        return createDirectUpload(input.filename);
+      }),
+
+    getStatus: adminProcedure
+      .input(z.object({ uploadId: z.string() }))
+      .query(async ({ input }) => {
+        return getAssetStatus(input.uploadId);
+      }),
+
+    list: adminProcedure.query(async () => {
+      return listAssets();
+    }),
+
+    delete: adminProcedure
+      .input(z.object({ muxAssetId: z.string() }))
+      .mutation(async ({ input }) => {
+        await deleteAsset(input.muxAssetId);
+        return { success: true };
+      }),
+
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        title: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+        const updateSet: Record<string, unknown> = {};
+        if (input.title !== undefined) updateSet.title = input.title;
+        if (Object.keys(updateSet).length === 0) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "No fields to update" });
+        }
+        await db.update(muxAssets).set(updateSet).where(eq(muxAssets.id, input.id));
         return { success: true };
       }),
   }),
