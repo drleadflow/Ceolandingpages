@@ -43,24 +43,24 @@ export async function pushLeadToGHL(payload: GHLLeadPayload): Promise<boolean> {
   try {
     const body = {
       // Standard GHL contact fields
-      first_name: payload.firstName,
+      firstName: payload.firstName,
       email: payload.email,
       phone: payload.phone || "",
-      company_name: payload.businessName,
+      companyName: payload.businessName,
       website: payload.website || "",
 
       // Custom fields (mapped by key name - configure in GHL to match)
-      business_type: payload.businessType,
+      businessType: payload.businessType,
       industry: payload.industry || "",
-      monthly_revenue: payload.monthlyRevenue,
-      biggest_frustration: payload.biggestFrustration,
-      ninety_day_goal: payload.ninetyDayGoal,
-      overall_score: String(payload.overallScore),
-      lead_score: String(payload.leadScore),
-      top_strength: payload.topStrength,
-      biggest_gap: payload.biggestGap,
-      dashboard_url: payload.dashboardUrl,
-      roadmap_id: String(payload.roadmapId),
+      monthlyRevenue: payload.monthlyRevenue,
+      biggestFrustration: payload.biggestFrustration,
+      ninetyDayGoal: payload.ninetyDayGoal,
+      overallScore: String(payload.overallScore),
+      leadScore: String(payload.leadScore),
+      topStrength: payload.topStrength,
+      biggestGap: payload.biggestGap,
+      dashboardUrl: payload.dashboardUrl,
+      roadmapId: String(payload.roadmapId),
 
       // Tags for GHL automation triggers
       tags: ["titan-quiz-lead", `score-${payload.leadScore >= 70 ? "hot" : payload.leadScore >= 40 ? "warm" : "cold"}`].join(","),
