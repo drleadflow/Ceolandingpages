@@ -15,6 +15,7 @@ import { SenjaTestimonials } from "@/components/funnel/SenjaTestimonials";
 import { FunnelVideoPlayer } from "@/components/funnel/FunnelVideoPlayer";
 import { PathSelector } from "@/components/funnel/PathSelector";
 import { PricingTiers } from "@/components/funnel/PricingTiers";
+import { ExitIntentPopup } from "@/components/funnel/ExitIntentPopup";
 import { getSessionId } from "@/lib/funnelTracking";
 import { usePixelTracking } from "@/hooks/usePixelTracking";
 
@@ -67,10 +68,7 @@ export default function SalesPage() {
 
   // Dual-path flow state
   const [showDualPath, setShowDualPath] = useState(false);
-  const [leadCaptured, setLeadCaptured] = useState(false);
-  const [capturedLead, setCapturedLead] = useState<FormValues | null>(null);
   const [selectedPath, setSelectedPath] = useState<"courses" | null>(null);
-  const pathSelectorRef = useRef<HTMLDivElement>(null);
   const pricingTiersRef = useRef<HTMLDivElement>(null);
 
   // Check URL param for flow variant: ?flow=dual enables the path selector
@@ -80,27 +78,6 @@ export default function SalesPage() {
       setShowDualPath(true);
     }
   }, []);
-
-  // Dual-path: capture lead first, then reveal path selector
-  const dualPathForm = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: { firstName: "", email: "", phone: "" },
-  });
-
-  const onDualPathLeadCapture = async (values: FormValues) => {
-    setCapturedLead(values);
-    setLeadCaptured(true);
-    trackEvent.mutate({
-      sessionId,
-      eventType: "checkout_start",
-      pageSlug: "sales",
-      splitTestVariant: variant?.variantId,
-    });
-    fireEvent("checkout_start");
-    setTimeout(() => {
-      pathSelectorRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
-  };
 
   const handleSelectCourses = () => {
     setSelectedPath("courses");
@@ -295,87 +272,17 @@ export default function SalesPage() {
         </div>
       </section>
 
-      {/* === DUAL-PATH FLOW: Lead Capture → Path Selector → Tiers === */}
+      {/* === DUAL-PATH FLOW: Path Selector → Tiers (no gate) === */}
       {showDualPath && (
         <>
-          {/* Step 1: Lead capture form */}
-          {!leadCaptured && (
-            <section id="checkout" className="mx-auto max-w-lg px-4 py-12">
-              <div className="mb-6 text-center">
-                <h2 className="text-2xl font-bold" style={{ color: "var(--titan-text-primary)" }}>
-                  Get Started — It's Free to See Your Options
-                </h2>
-                <p className="mt-2 text-sm" style={{ color: "var(--titan-text-secondary)" }}>
-                  Enter your details below and we'll show you the best path to grow your practice.
-                </p>
-              </div>
-              <div className="rounded-2xl border border-[var(--titan-border)] bg-white p-6 shadow-lg">
-                <form onSubmit={dualPathForm.handleSubmit(onDualPathLeadCapture)} className="space-y-4">
-                  <div>
-                    <label className="mb-1 block text-sm font-medium" style={{ color: "var(--titan-text-primary)" }}>
-                      First Name
-                    </label>
-                    <input
-                      {...dualPathForm.register("firstName")}
-                      placeholder="Your first name"
-                      className="w-full rounded-lg border border-[var(--titan-border)] px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                    />
-                    {dualPathForm.formState.errors.firstName && (
-                      <p className="mt-1 text-xs text-red-500">{dualPathForm.formState.errors.firstName.message}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium" style={{ color: "var(--titan-text-primary)" }}>
-                      Email Address
-                    </label>
-                    <input
-                      {...dualPathForm.register("email")}
-                      type="email"
-                      placeholder="you@example.com"
-                      className="w-full rounded-lg border border-[var(--titan-border)] px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                    />
-                    {dualPathForm.formState.errors.email && (
-                      <p className="mt-1 text-xs text-red-500">{dualPathForm.formState.errors.email.message}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium" style={{ color: "var(--titan-text-primary)" }}>
-                      Phone Number <span className="text-xs font-normal text-gray-400">(optional)</span>
-                    </label>
-                    <input
-                      {...dualPathForm.register("phone")}
-                      type="tel"
-                      placeholder="(555) 123-4567"
-                      className="w-full rounded-lg border border-[var(--titan-border)] px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full rounded-xl px-8 py-4 text-lg font-bold text-white shadow-lg transition-all hover:shadow-xl"
-                    style={{ background: "linear-gradient(135deg, var(--titan-gold) 0%, var(--titan-gold-hover) 100%)" }}
-                  >
-                    See Your Options
-                  </button>
-                </form>
-              </div>
-            </section>
-          )}
+          <PathSelector onSelectCourses={handleSelectCourses} onSelectAgency={handleSelectAgency} />
 
-          {/* Step 2: Path selector — shown after lead is captured */}
-          {leadCaptured && (
-            <div ref={pathSelectorRef}>
-              <PathSelector onSelectCourses={handleSelectCourses} onSelectAgency={handleSelectAgency} />
-            </div>
-          )}
-
-          {/* Step 3: Pricing tiers — shown when user selects "Courses" */}
-          {leadCaptured && selectedPath === "courses" && (
+          {selectedPath === "courses" && (
             <div ref={pricingTiersRef}>
               <PricingTiers
                 onPurchaseComplete={handleTierPurchaseComplete}
                 sessionId={sessionId}
                 splitTestVariant={variant?.variantId}
-                capturedLead={capturedLead ?? undefined}
               />
             </div>
           )}
@@ -499,6 +406,9 @@ export default function SalesPage() {
           ))}
         </div>
       </section>
+
+      {/* Exit-intent popup — dual-path only */}
+      {showDualPath && <ExitIntentPopup />}
     </div>
   );
 }

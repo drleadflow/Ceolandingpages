@@ -90,10 +90,9 @@ interface PricingTiersProps {
   onPurchaseComplete: (productSlug: string) => void;
   sessionId: string;
   splitTestVariant?: string;
-  capturedLead?: { firstName: string; email: string; phone?: string };
 }
 
-export function PricingTiers({ onPurchaseComplete, sessionId, splitTestVariant, capturedLead }: PricingTiersProps) {
+export function PricingTiers({ onPurchaseComplete, sessionId, splitTestVariant }: PricingTiersProps) {
   const { setOrder, addProduct } = useFunnel();
   const createCheckout = trpc.funnel.checkout.createCheckout.useMutation();
   const confirmMutation = trpc.funnel.checkout.confirmPurchase.useMutation();
@@ -108,23 +107,9 @@ export function PricingTiers({ onPurchaseComplete, sessionId, splitTestVariant, 
     defaultValues: { firstName: "", email: "", phone: "" },
   });
 
-  const handleSelectTier = async (slug: string) => {
+  const handleSelectTier = (slug: string) => {
     setSelectedTier(slug);
     setCheckoutData(null);
-
-    // If lead data was already captured, skip the form and go straight to checkout
-    if (capturedLead) {
-      setFormValues(capturedLead);
-      trackEvent.mutate({
-        sessionId,
-        eventType: "checkout_start",
-        pageSlug: "sales",
-        splitTestVariant,
-      });
-      const result = await createCheckout.mutateAsync(capturedLead);
-      setOrder(result.orderId, capturedLead.email, capturedLead.firstName);
-      setCheckoutData({ checkoutConfigId: result.checkoutConfigId, orderId: result.orderId, sandbox: result.sandbox });
-    }
   };
 
   const onSubmit = async (values: FormValues) => {
@@ -252,14 +237,7 @@ export function PricingTiers({ onPurchaseComplete, sessionId, splitTestVariant, 
               Complete Your Order — {TIERS.find((t) => t.slug === selectedTier)?.name}
             </h3>
 
-            {/* If capturedLead exists, skip the form — checkout is initiated on tier select */}
-            {capturedLead && !checkoutData && (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-              </div>
-            )}
-
-            {!capturedLead && !checkoutData ? (
+            {!checkoutData ? (
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium" style={{ color: "var(--titan-text-primary)" }}>

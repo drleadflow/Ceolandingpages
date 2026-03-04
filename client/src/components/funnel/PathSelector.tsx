@@ -13,10 +13,10 @@ export function PathSelector({ onSelectCourses, onSelectAgency }: PathSelectorPr
           Choose Your Path
         </p>
         <h2 className="text-2xl font-bold md:text-3xl" style={{ color: "var(--titan-text-primary)" }}>
-          How Do You Want to Grow Your Practice?
+          What's the Best Way to Grow Your Practice?
         </h2>
         <p className="mx-auto mt-2 max-w-xl text-sm" style={{ color: "var(--titan-text-secondary)" }}>
-          Whether you want to learn the system yourself or have our team handle everything — we've got you covered.
+          Two proven paths. Same destination — a full schedule of new patients.
         </p>
       </div>
 
@@ -30,10 +30,10 @@ export function PathSelector({ onSelectCourses, onSelectAgency }: PathSelectorPr
             <BookOpen className="h-7 w-7 text-blue-600" />
           </div>
           <h3 className="mb-2 text-xl font-bold" style={{ color: "var(--titan-text-primary)" }}>
-            Learn to Do It Yourself
+            I Have Time to Learn the System
           </h3>
           <p className="mb-6 text-sm leading-relaxed" style={{ color: "var(--titan-text-secondary)" }}>
-            Get the exact system, templates, and training to run profitable Facebook ads for your practice. Start from $197.
+            Get the exact Facebook ad playbook, templates, and training used by 500+ health practices. Master it at your own pace. Starting at $197.
           </p>
           <div className="flex items-center gap-2 text-sm font-semibold text-blue-600 transition-all group-hover:gap-3">
             See Course Options <ArrowRight className="h-4 w-4" />
@@ -52,18 +52,19 @@ export function PathSelector({ onSelectCourses, onSelectAgency }: PathSelectorPr
             <Phone className="h-7 w-7 text-indigo-600" />
           </div>
           <h3 className="mb-2 text-xl font-bold" style={{ color: "var(--titan-text-primary)" }}>
-            Let Us Do It For You
+            I'd Rather Invest and Save Time
           </h3>
           <p className="mb-6 text-sm leading-relaxed" style={{ color: "var(--titan-text-secondary)" }}>
-            Our team builds, manages, and optimizes your entire Facebook ad system. Done-for-you patient acquisition on autopilot.
+            Our team builds, launches, and manages your entire ad system. You focus on patients — we focus on filling your schedule.
           </p>
           <div className="flex items-center gap-2 text-sm font-semibold text-indigo-600 transition-all group-hover:gap-3">
             Book a Free Strategy Call <ArrowRight className="h-4 w-4" />
           </div>
           <div className="absolute right-4 top-4 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-            Premium
+            Done-For-You
           </div>
         </button>
+
       </div>
     </section>
   );

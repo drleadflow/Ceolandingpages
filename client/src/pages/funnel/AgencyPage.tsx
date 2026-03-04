@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, TrendingUp, Users, Target, Shield, ChevronDown, Phone, BarChart3, Zap, Clock } from "lucide-react";
 import { FunnelNav } from "@/components/funnel/FunnelNav";
+import { ExitIntentPopup } from "@/components/funnel/ExitIntentPopup";
 import { SenjaTestimonials } from "@/components/funnel/SenjaTestimonials";
 import { getSessionId } from "@/lib/funnelTracking";
 import { usePixelTracking } from "@/hooks/usePixelTracking";
@@ -296,6 +297,8 @@ export default function AgencyPage() {
           Book Your Free Strategy Call
         </button>
       </section>
+
+      <ExitIntentPopup quizRef="agency-exit" />
     </div>
   );
 }
