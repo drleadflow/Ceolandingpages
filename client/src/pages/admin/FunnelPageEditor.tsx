@@ -364,7 +364,9 @@ interface LivePreviewProps {
 
 function LivePreview({ slug, refreshKey }: LivePreviewProps) {
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
-  const previewUrl = `${window.location.origin}${SLUG_TO_PATH[slug]}?preview=true`;
+  const basePath = SLUG_TO_PATH[slug];
+  const separator = basePath.includes("?") ? "&" : "?";
+  const previewUrl = `${window.location.origin}${basePath}${separator}preview=true`;
 
   return (
     <div className="flex flex-col h-full">
@@ -520,7 +522,8 @@ function PageEditorPanel({ slug, showPreview }: PageEditorPanelProps) {
   }
 
   const livePath = SLUG_TO_PATH[slug];
-  const liveUrl = `${window.location.origin}${livePath}?preview=true`;
+  const liveSeparator = livePath.includes("?") ? "&" : "?";
+  const liveUrl = `${window.location.origin}${livePath}${liveSeparator}preview=true`;
 
   if (isLoading) {
     return (

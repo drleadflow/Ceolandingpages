@@ -67,17 +67,12 @@ export default function SalesPage() {
   const [formValues, setFormValues] = useState<FormValues | null>(null);
 
   // Dual-path flow state
-  const [showDualPath, setShowDualPath] = useState(false);
+  const [showDualPath] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("flow") === "dual";
+  });
   const [selectedPath, setSelectedPath] = useState<"courses" | null>(null);
   const pricingTiersRef = useRef<HTMLDivElement>(null);
-
-  // Check URL param for flow variant: ?flow=dual enables the path selector
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("flow") === "dual") {
-      setShowDualPath(true);
-    }
-  }, []);
 
   const handleSelectCourses = () => {
     setSelectedPath("courses");
@@ -99,9 +94,11 @@ export default function SalesPage() {
   };
 
   // CMS content — use draft preview when ?preview=true
-  const isPreview = new URLSearchParams(window.location.search).has("preview");
-  const cmsPublicQuery = trpc.funnelAdmin.pages.getPublic.useQuery({ slug: "sales" }, { enabled: !isPreview });
-  const cmsPreviewQuery = trpc.funnelAdmin.pages.getPreview.useQuery({ slug: "sales" }, { enabled: isPreview });
+  const searchParams = new URLSearchParams(window.location.search);
+  const isPreview = searchParams.has("preview");
+  const cmsSlug = showDualPath ? "sales-dual" : "sales";
+  const cmsPublicQuery = trpc.funnelAdmin.pages.getPublic.useQuery({ slug: cmsSlug }, { enabled: !isPreview });
+  const cmsPreviewQuery = trpc.funnelAdmin.pages.getPreview.useQuery({ slug: cmsSlug }, { enabled: isPreview });
   const cmsContent = isPreview ? cmsPreviewQuery.data : cmsPublicQuery.data;
 
   // Split test variant
