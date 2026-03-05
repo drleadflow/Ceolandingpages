@@ -26,6 +26,11 @@ import BookingPage from "./pages/funnel/BookingPage";
 import CallPrepPage from "./pages/funnel/CallPrepPage";
 import AgencyPage from "./pages/funnel/AgencyPage";
 import VideoPlayerPage from "./pages/funnel/VideoPlayerPage";
+import FunnelList from "./pages/admin/FunnelList";
+import FunnelBuilder from "./pages/admin/FunnelBuilder";
+import FunnelStepAnalytics from "./pages/admin/FunnelStepAnalytics";
+import FunnelTemplates from "./pages/admin/FunnelTemplates";
+import DynamicFunnel from "./pages/funnel/DynamicFunnel";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -68,6 +73,19 @@ function Router() {
       <Route path="/admin/video-library">
         <AdminLayout><VideoLibrary /></AdminLayout>
       </Route>
+      <Route path="/admin/builder">
+        <AdminLayout><FunnelList /></AdminLayout>
+      </Route>
+      <Route path="/admin/builder/:id">
+        <FunnelBuilder />
+      </Route>
+      <Route path="/admin/builder/:id/analytics">
+        <FunnelStepAnalytics />
+      </Route>
+      <Route path="/admin/templates">
+        <AdminLayout><FunnelTemplates /></AdminLayout>
+      </Route>
+      <Route path="/f/:slug" component={DynamicFunnel} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

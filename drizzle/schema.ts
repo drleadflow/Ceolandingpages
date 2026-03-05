@@ -279,3 +279,104 @@ export const videoEvents = mysqlTable("videoEvents", {
 });
 
 export type VideoEvent = typeof videoEvents.$inferSelect;
+
+// ── Interactive Funnel Builder ──
+
+export const funnels = mysqlTable("funnels", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 100 }).notNull().unique(),
+  status: mysqlEnum("funnelStatus", ["draft", "published", "archived"]).default("draft").notNull(),
+  settings: text("settings"), // JSON: theme, tracking, SEO, transitions
+  version: int("version").default(1).notNull(),
+  publishedAt: timestamp("publishedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Funnel = typeof funnels.$inferSelect;
+export type InsertFunnel = typeof funnels.$inferInsert;
+
+export const funnelSteps = mysqlTable("funnelSteps", {
+  id: int("id").autoincrement().primaryKey(),
+  funnelId: int("funnelId").notNull(),
+  stepKey: varchar("stepKey", { length: 50 }).notNull(), // nanoid
+  name: varchar("name", { length: 255 }).notNull(),
+  type: mysqlEnum("funnelStepType", ["content", "form", "quiz", "checkout", "calendar", "thank-you"]).default("content").notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  puckData: text("puckData"), // JSON: Puck editor data
+  draftPuckData: text("draftPuckData"), // JSON: unpublished draft
+  settings: text("settings"), // JSON: backgroundColor, showProgressBar, autoAdvanceMs
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type FunnelStep = typeof funnelSteps.$inferSelect;
+export type InsertFunnelStep = typeof funnelSteps.$inferInsert;
+
+export const funnelConditionalRoutes = mysqlTable("funnelConditionalRoutes", {
+  id: int("id").autoincrement().primaryKey(),
+  funnelId: int("funnelId").notNull(),
+  fromStepKey: varchar("fromStepKey", { length: 50 }).notNull(),
+  toStepKey: varchar("toStepKey", { length: 50 }).notNull(),
+  conditions: text("conditions").notNull(), // JSON: Array<{ field, operator, value }>
+  conditionLogic: mysqlEnum("conditionLogic", ["and", "or"]).default("and").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type FunnelConditionalRoute = typeof funnelConditionalRoutes.$inferSelect;
+export type InsertFunnelConditionalRoute = typeof funnelConditionalRoutes.$inferInsert;
+
+export const funnelSubmissions = mysqlTable("funnelSubmissions", {
+  id: int("id").autoincrement().primaryKey(),
+  funnelId: int("funnelId").notNull(),
+  sessionId: varchar("sessionId", { length: 100 }).notNull(),
+  data: text("data"), // JSON: all form values accumulated across steps
+  completedSteps: text("completedSteps"), // JSON: string[] of stepKeys visited
+  quizAnswers: text("quizAnswers"), // JSON: Record<questionId, answerId>
+  leadScore: int("leadScore").default(0),
+  ghlSynced: int("ghlSynced").default(0).notNull(), // 0 = not synced, 1 = synced
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type FunnelSubmission = typeof funnelSubmissions.$inferSelect;
+export type InsertFunnelSubmission = typeof funnelSubmissions.$inferInsert;
+
+// ── Funnel Builder: Versioning, Analytics, Templates ──
+
+export const funnelVersions = mysqlTable("funnelVersions", {
+  id: int("id").autoincrement().primaryKey(),
+  funnelId: int("funnelId").notNull(),
+  version: int("version").notNull(),
+  snapshot: text("snapshot").notNull(), // JSON: full funnel + steps snapshot
+  publishedAt: timestamp("publishedAt").defaultNow().notNull(),
+});
+
+export type FunnelVersion = typeof funnelVersions.$inferSelect;
+
+export const funnelStepEvents = mysqlTable("funnelStepEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  funnelId: int("funnelId").notNull(),
+  stepKey: varchar("stepKey", { length: 50 }).notNull(),
+  sessionId: varchar("sessionId", { length: 100 }).notNull(),
+  eventType: mysqlEnum("funnelStepEventType", ["step_view", "step_complete", "step_skip", "form_submit", "button_click"]).notNull(),
+  metadata: text("metadata"), // JSON
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type FunnelStepEvent = typeof funnelStepEvents.$inferSelect;
+
+export const funnelTemplates = mysqlTable("funnelTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  category: varchar("category", { length: 100 }).notNull(),
+  thumbnail: varchar("thumbnail", { length: 500 }),
+  snapshot: text("snapshot").notNull(), // JSON: funnel settings + steps with puckData
+  isSystem: int("isSystem").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type FunnelTemplate = typeof funnelTemplates.$inferSelect;
+export type InsertFunnelTemplate = typeof funnelTemplates.$inferInsert;
