@@ -9,6 +9,7 @@ import {
   Radio,
   Video,
   Layers,
+  BarChart3,
 } from "lucide-react";
 
 type NavItem = {
@@ -25,6 +26,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Split Tests", path: "/admin/funnel/split-tests", icon: <FlaskConical className="w-4 h-4" /> },
   { label: "Tracking", path: "/admin/funnel/tracking", icon: <Radio className="w-4 h-4" /> },
   { label: "Videos", path: "/admin/video-library", icon: <Video className="w-4 h-4" /> },
+  { label: "Video Analytics", path: "/admin/video-analytics", icon: <BarChart3 className="w-4 h-4" /> },
   { label: "Builder", path: "/admin/builder", icon: <Layers className="w-4 h-4" /> },
 ];
 

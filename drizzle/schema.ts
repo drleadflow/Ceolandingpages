@@ -280,6 +280,24 @@ export const videoEvents = mysqlTable("videoEvents", {
 
 export type VideoEvent = typeof videoEvents.$inferSelect;
 
+// ── Video Heatmap Views (Per-Second Retention) ──
+
+export const videoHeatmapViews = mysqlTable("videoHeatmapViews", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: varchar("sessionId", { length: 100 }).notNull(),
+  videoId: varchar("videoId", { length: 255 }).notNull(),
+  pageSlug: varchar("pageSlug", { length: 100 }).notNull(),
+  playbackVector: text("playbackVector"),
+  seekEvents: text("seekEvents"),
+  maxSecondReached: int("maxSecondReached").default(0),
+  totalWatchTimeSec: int("totalWatchTimeSec").default(0),
+  videoDurationSec: int("videoDurationSec").default(0),
+  deviceType: varchar("deviceType", { length: 50 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type VideoHeatmapView = typeof videoHeatmapViews.$inferSelect;
+
 // ── Interactive Funnel Builder ──
 
 export const funnels = mysqlTable("funnels", {

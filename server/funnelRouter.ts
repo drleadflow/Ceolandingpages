@@ -27,6 +27,7 @@ export const funnelRouter = router({
           email: z.string().email(),
           firstName: z.string().min(1),
           phone: z.string().optional(),
+          productSlug: z.string().optional(),
         }),
       )
       .mutation(async ({ input }) => {
@@ -35,11 +36,12 @@ export const funnelRouter = router({
 
         const whop = getWhop();
 
-        // Get the course product from our DB
+        // Get the requested product (defaults to fb-ads-course for backward compat)
+        const slug = input.productSlug ?? "fb-ads-course";
         const [product] = await db
           .select()
           .from(products)
-          .where(eq(products.slug, "fb-ads-course"))
+          .where(eq(products.slug, slug))
           .limit(1);
 
         if (!product) {
@@ -76,7 +78,7 @@ export const funnelRouter = router({
             orderId: String(orderId),
             email: input.email,
             firstName: input.firstName,
-            productSlug: "fb-ads-course",
+            productSlug: slug,
           },
         });
 

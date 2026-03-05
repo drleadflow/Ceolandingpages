@@ -86,6 +86,38 @@ async function startServer() {
     }
   });
 
+  // Video heatmap beacon endpoint (sendBeacon sends raw JSON, not tRPC format)
+  app.post('/api/video-heatmap/track', async (req, res) => {
+    try {
+      const { getDb } = await import('../db');
+      const { videoHeatmapViews } = await import('../../drizzle/schema');
+      const db = await getDb();
+      if (!db) return res.status(503).json({ error: 'DB unavailable' });
+
+      const b = req.body;
+      if (!b?.sessionId || !b?.videoId || !b?.pageSlug) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      await db.insert(videoHeatmapViews).values({
+        sessionId: String(b.sessionId),
+        videoId: String(b.videoId),
+        pageSlug: String(b.pageSlug),
+        playbackVector: JSON.stringify(b.playbackVector ?? []),
+        seekEvents: JSON.stringify(b.seekEvents ?? []),
+        maxSecondReached: Number(b.maxSecondReached) || 0,
+        totalWatchTimeSec: Number(b.totalWatchTimeSec) || 0,
+        videoDurationSec: Number(b.videoDurationSec) || 0,
+        deviceType: b.deviceType ? String(b.deviceType) : null,
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      logger.error({ err: error }, 'Video heatmap track failed');
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
   // tRPC API

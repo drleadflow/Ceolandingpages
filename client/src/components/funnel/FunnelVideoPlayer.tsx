@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Play, Volume2 } from "lucide-react";
 import MuxPlayer from "@mux/mux-player-react";
+import { useVideoHeatmap } from "@/hooks/useVideoHeatmap";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -15,6 +16,10 @@ interface FunnelVideoPlayerProps {
   overlayColor?: string;
   title?: string;
   className?: string;
+  onWatchProgress?: (seconds: number, percent: number) => void;
+  heatmapVideoId?: string;
+  heatmapPageSlug?: string;
+  heatmapSessionId?: string;
 }
 
 interface ParsedVideo {
@@ -713,9 +718,14 @@ interface Mp4PlayerProps {
   src: string;
   videoRef: React.RefObject<HTMLVideoElement | null>;
   onCanPlay: () => void;
+  onTimeUpdate?: (e: React.SyntheticEvent<HTMLVideoElement>) => void;
+  onSeeking?: (e: React.SyntheticEvent<HTMLVideoElement>) => void;
+  onSeeked?: (e: React.SyntheticEvent<HTMLVideoElement>) => void;
+  onPause?: () => void;
+  onEnded?: () => void;
 }
 
-function Mp4Player({ src, videoRef, onCanPlay }: Mp4PlayerProps) {
+function Mp4Player({ src, videoRef, onCanPlay, onTimeUpdate, onSeeking, onSeeked, onPause, onEnded }: Mp4PlayerProps) {
   return (
     <video
       ref={videoRef}
@@ -725,6 +735,11 @@ function Mp4Player({ src, videoRef, onCanPlay }: Mp4PlayerProps) {
       muted
       playsInline
       onCanPlay={onCanPlay}
+      onTimeUpdate={onTimeUpdate}
+      onSeeking={onSeeking}
+      onSeeked={onSeeked}
+      onPause={onPause}
+      onEnded={onEnded}
     />
   );
 }
@@ -738,6 +753,10 @@ export function FunnelVideoPlayer({
   overlayColor = "#3974FF",
   title = "Video",
   className = "",
+  onWatchProgress,
+  heatmapVideoId,
+  heatmapPageSlug,
+  heatmapSessionId,
 }: FunnelVideoPlayerProps) {
   const parsed = parseVideoUrl(videoUrl);
   const smartAutoplay = canSmartAutoplay(parsed.source);
@@ -749,6 +768,15 @@ export function FunnelVideoPlayer({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const ytPlayerRef = useRef<YTPlayer | null>(null);
   const vimeoIframeRef = useRef<HTMLIFrameElement | null>(null);
+
+  // Video heatmap tracking
+  const enableHeatmap = !!(heatmapVideoId && heatmapPageSlug && heatmapSessionId);
+  const heatmap = useVideoHeatmap({
+    videoId: heatmapVideoId ?? parsed.videoId ?? videoUrl,
+    pageSlug: heatmapPageSlug ?? "",
+    sessionId: heatmapSessionId ?? "",
+    onProgress: onWatchProgress,
+  });
 
   const resolvedThumbnail = thumbnailUrl ?? parsed.thumbnail;
 
@@ -839,7 +867,23 @@ export function FunnelVideoPlayer({
             <Mp4Player
               src={parsed.embedUrl}
               videoRef={videoRef}
-              onCanPlay={handleMp4CanPlay}
+              onCanPlay={() => {
+                handleMp4CanPlay();
+                if (enableHeatmap && videoRef.current) {
+                  heatmap.handleLoadedMetadata(videoRef.current.duration);
+                }
+              }}
+              onTimeUpdate={enableHeatmap ? (e: React.SyntheticEvent<HTMLVideoElement>) => {
+                heatmap.handleTimeUpdate(e.currentTarget.currentTime);
+              } : undefined}
+              onSeeking={enableHeatmap ? (e: React.SyntheticEvent<HTMLVideoElement>) => {
+                heatmap.handleSeeking(e.currentTarget.currentTime);
+              } : undefined}
+              onSeeked={enableHeatmap ? (e: React.SyntheticEvent<HTMLVideoElement>) => {
+                heatmap.handleSeeked(e.currentTarget.currentTime);
+              } : undefined}
+              onPause={enableHeatmap ? heatmap.handlePause : undefined}
+              onEnded={enableHeatmap ? heatmap.handleEnded : undefined}
             />
           )}
 
@@ -850,6 +894,20 @@ export function FunnelVideoPlayer({
               className="aspect-video w-full"
               onCanPlay={() => setPlayerReady(true)}
               muted={state === "playing-muted"}
+              onLoadedMetadata={enableHeatmap ? (e: any) => {
+                heatmap.handleLoadedMetadata(e.target?.duration ?? 0);
+              } : undefined}
+              onTimeUpdate={enableHeatmap ? (e: any) => {
+                heatmap.handleTimeUpdate(e.target?.currentTime ?? 0);
+              } : undefined}
+              onSeeking={enableHeatmap ? (e: any) => {
+                heatmap.handleSeeking(e.target?.currentTime ?? 0);
+              } : undefined}
+              onSeeked={enableHeatmap ? (e: any) => {
+                heatmap.handleSeeked(e.target?.currentTime ?? 0);
+              } : undefined}
+              onPause={enableHeatmap ? heatmap.handlePause : undefined}
+              onEnded={enableHeatmap ? heatmap.handleEnded : undefined}
             />
           )}
 

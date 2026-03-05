@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -66,6 +66,20 @@ export default function SalesPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [formValues, setFormValues] = useState<FormValues | null>(null);
 
+  // Smart CTA: progressive section reveals based on video watch progress
+  // Only active when ?smart-cta=1 is in the URL
+  const [smartCtaEnabled] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("smart-cta") === "1";
+  });
+  const [watchPercent, setWatchPercent] = useState(0);
+  const handleWatchProgress = useCallback((_seconds: number, percent: number) => {
+    setWatchPercent((prev) => Math.max(prev, percent));
+  }, []);
+  // Helper: should a section be visible? Always true unless smart CTA is active with a video
+  const isRevealed = (threshold: number) =>
+    !smartCtaEnabled || !content.videoUrl || watchPercent >= threshold;
+
   // Dual-path flow state
   const [showDualPath] = useState(() => {
     const params = new URLSearchParams(window.location.search);
@@ -116,8 +130,20 @@ export default function SalesPage() {
     ctaText: (variant?.contentOverrides?.ctaText as string) ?? cmsContent?.ctaText ?? null,
     originalPrice: (variant?.contentOverrides?.originalPrice as number) ?? cmsContent?.originalPrice ?? 297,
     salePrice: (variant?.contentOverrides?.salePrice as number) ?? cmsContent?.salePrice ?? 197,
-    valueStackItems: cmsContent?.valueStackItems ? JSON.parse(cmsContent.valueStackItems) as string[] : VALUE_ITEMS,
-    faqItems: cmsContent?.faqItems ? JSON.parse(cmsContent.faqItems) as Array<{q: string; a: string}> : FAQ_ITEMS,
+    valueStackItems: (() => {
+      if (!cmsContent?.valueStackItems) return VALUE_ITEMS;
+      try {
+        const parsed = JSON.parse(cmsContent.valueStackItems) as string[];
+        return parsed.length > 0 ? parsed : VALUE_ITEMS;
+      } catch { return VALUE_ITEMS; }
+    })(),
+    faqItems: (() => {
+      if (!cmsContent?.faqItems) return FAQ_ITEMS;
+      try {
+        const parsed = JSON.parse(cmsContent.faqItems) as Array<{q: string; a: string}>;
+        return parsed.length > 0 ? parsed : FAQ_ITEMS;
+      } catch { return FAQ_ITEMS; }
+    })(),
     videoUrl: cmsContent?.videoUrl ?? null,
     heroImageUrl: cmsContent?.heroImageUrl ?? null,
     videoOverlayStyle: cmsContent?.videoOverlayStyle ?? "front-and-center",
@@ -221,6 +247,10 @@ export default function SalesPage() {
               thumbnailUrl={content.heroImageUrl}
               overlayStyle={content.videoOverlayStyle as any}
               title="Sales Video"
+              onWatchProgress={handleWatchProgress}
+              heatmapVideoId={content.videoUrl}
+              heatmapPageSlug="sales"
+              heatmapSessionId={sessionId}
             />
           </div>
         ) : (
@@ -235,8 +265,17 @@ export default function SalesPage() {
 
       </section>
 
-      {/* Social Proof Bar */}
-      <section className="border-y border-[var(--titan-border)] bg-white py-6">
+      {/* Social Proof Bar — reveals at 25% watch (when smart-cta enabled) */}
+      <section
+        className="border-y border-[var(--titan-border)] bg-white py-6 transition-all duration-700"
+        style={{
+          opacity: isRevealed(25) ? 1 : 0,
+          transform: isRevealed(25) ? "translateY(0)" : "translateY(20px)",
+          maxHeight: isRevealed(25) ? "500px" : "0px",
+          overflow: isRevealed(25) ? "visible" : "hidden",
+          padding: isRevealed(25) ? undefined : "0",
+        }}
+      >
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-8 px-4">
           {[
             { icon: Users, label: "500+ Students" },
@@ -251,16 +290,28 @@ export default function SalesPage() {
         </div>
       </section>
 
-      {/* Value Stack */}
-      <section className="mx-auto max-w-3xl px-4 py-12">
+      {/* Value Stack — reveals at 50% watch (when smart-cta enabled) */}
+      <section
+        className="mx-auto max-w-3xl px-4 py-12 transition-all duration-700"
+        style={{
+          opacity: isRevealed(50) ? 1 : 0,
+          transform: isRevealed(50) ? "translateY(0)" : "translateY(20px)",
+        }}
+      >
         <h2 className="mb-6 text-center text-2xl font-bold" style={{ color: "var(--titan-text-primary)" }}>
           Everything You Get Inside
         </h2>
         <ValueStack items={content.valueStackItems} />
       </section>
 
-      {/* Testimonials (Senja) */}
-      <section className="bg-white py-12">
+      {/* Testimonials (Senja) — reveals at 50% watch (when smart-cta enabled) */}
+      <section
+        className="bg-white py-12 transition-all duration-700"
+        style={{
+          opacity: isRevealed(50) ? 1 : 0,
+          transform: isRevealed(50) ? "translateY(0)" : "translateY(20px)",
+        }}
+      >
         <div className="mx-auto max-w-5xl px-4">
           <h2 className="mb-8 text-center text-2xl font-bold" style={{ color: "var(--titan-text-primary)" }}>
             What Health Professionals Are Saying
@@ -286,9 +337,16 @@ export default function SalesPage() {
         </>
       )}
 
-      {/* === ORIGINAL FLOW: Pricing + Checkout (unchanged) === */}
+      {/* === ORIGINAL FLOW: Pricing + Checkout — reveals at 50%, pulses at 75% (when smart-cta enabled) === */}
       {!showDualPath && (
-        <section id="checkout" className="mx-auto max-w-lg px-4 py-12">
+        <section
+          id="checkout"
+          className="mx-auto max-w-lg px-4 py-12 transition-all duration-700"
+          style={{
+            opacity: isRevealed(50) ? 1 : 0,
+            transform: isRevealed(50) ? "translateY(0)" : "translateY(20px)",
+          }}
+        >
           <PricingBlock originalPrice={content.originalPrice} salePrice={content.salePrice} label="Special Launch Price" />
 
           <div className="mt-8 rounded-2xl border border-[var(--titan-border)] bg-white p-6 shadow-lg">
@@ -335,7 +393,9 @@ export default function SalesPage() {
                 <button
                   type="submit"
                   disabled={createCheckout.isPending}
-                  className="w-full rounded-xl px-8 py-4 text-lg font-bold text-white shadow-lg transition-all hover:shadow-xl disabled:opacity-50"
+                  className={`w-full rounded-xl px-8 py-4 text-lg font-bold text-white shadow-lg transition-all hover:shadow-xl disabled:opacity-50 ${
+                    smartCtaEnabled && watchPercent >= 75 ? "animate-pulse ring-2 ring-yellow-400/50 ring-offset-2 ring-offset-white" : ""
+                  }`}
                   style={{ background: "linear-gradient(135deg, var(--titan-gold) 0%, var(--titan-gold-hover) 100%)" }}
                 >
                   {createCheckout.isPending ? (

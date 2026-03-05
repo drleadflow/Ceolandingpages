@@ -16,6 +16,7 @@ import FunnelAnalytics from "./pages/admin/FunnelAnalytics";
 import FunnelSplitTests from "./pages/admin/FunnelSplitTests";
 import TrackingSettings from "./pages/admin/TrackingSettings";
 import VideoLibrary from "./pages/admin/VideoLibrary";
+import VideoAnalytics from "./pages/admin/VideoAnalytics";
 import PublicRoadmap from "./pages/PublicRoadmap";
 import SharedPlaybook from "./pages/SharedPlaybook";
 import SalesPage from "./pages/funnel/SalesPage";
@@ -81,6 +82,9 @@ function Router() {
       </Route>
       <Route path="/admin/video-library">
         <AdminLayout><VideoLibrary /></AdminLayout>
+      </Route>
+      <Route path="/admin/video-analytics">
+        <AdminLayout><VideoAnalytics /></AdminLayout>
       </Route>
       <Route path="/admin">
         <AdminLayout><AdminLeads /></AdminLayout>

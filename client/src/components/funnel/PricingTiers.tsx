@@ -121,7 +121,7 @@ export function PricingTiers({ onPurchaseComplete, sessionId, splitTestVariant }
       pageSlug: "sales",
       splitTestVariant,
     });
-    const result = await createCheckout.mutateAsync(values);
+    const result = await createCheckout.mutateAsync({ ...values, productSlug: selectedTier });
     setOrder(result.orderId, values.email, values.firstName);
     setCheckoutData({ checkoutConfigId: result.checkoutConfigId, orderId: result.orderId, sandbox: result.sandbox });
   };
