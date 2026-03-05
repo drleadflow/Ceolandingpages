@@ -49,8 +49,17 @@ function Router() {
       <Route path="/call-prep" component={CallPrepPage} />
       <Route path="/agency" component={AgencyPage} />
       <Route path="/v/:playbackId" component={VideoPlayerPage} />
-      <Route path="/admin">
-        <AdminLayout><AdminLeads /></AdminLayout>
+      <Route path="/admin/builder/:id/analytics">
+        <FunnelStepAnalytics />
+      </Route>
+      <Route path="/admin/builder/:id">
+        <FunnelBuilder />
+      </Route>
+      <Route path="/admin/builder">
+        <AdminLayout><FunnelList /></AdminLayout>
+      </Route>
+      <Route path="/admin/templates">
+        <AdminLayout><FunnelTemplates /></AdminLayout>
       </Route>
       <Route path="/admin/leads">
         <AdminLayout><AdminLeads /></AdminLayout>
@@ -73,17 +82,8 @@ function Router() {
       <Route path="/admin/video-library">
         <AdminLayout><VideoLibrary /></AdminLayout>
       </Route>
-      <Route path="/admin/builder">
-        <AdminLayout><FunnelList /></AdminLayout>
-      </Route>
-      <Route path="/admin/builder/:id">
-        <FunnelBuilder />
-      </Route>
-      <Route path="/admin/builder/:id/analytics">
-        <FunnelStepAnalytics />
-      </Route>
-      <Route path="/admin/templates">
-        <AdminLayout><FunnelTemplates /></AdminLayout>
+      <Route path="/admin">
+        <AdminLayout><AdminLeads /></AdminLayout>
       </Route>
       <Route path="/f/:slug" component={DynamicFunnel} />
       <Route path={"/404"} component={NotFound} />
