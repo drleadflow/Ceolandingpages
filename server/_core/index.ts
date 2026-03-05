@@ -89,6 +89,10 @@ async function startServer() {
   // Video heatmap beacon endpoint (sendBeacon sends raw JSON, not tRPC format)
   app.post('/api/video-heatmap/track', async (req, res) => {
     try {
+      const { checkRateLimit, getRateLimitIdentifier } = await import('../rateLimit');
+      const rateLimit = await checkRateLimit(getRateLimitIdentifier(req), { maxRequests: 60, windowMs: 60_000 });
+      if (!rateLimit.allowed) return res.status(429).json({ error: 'Too many requests' });
+
       const { getDb } = await import('../db');
       const { videoHeatmapViews } = await import('../../drizzle/schema');
       const db = await getDb();
@@ -99,16 +103,30 @@ async function startServer() {
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
+      // Validate array fields
+      const MAX_VECTOR_LEN = 7200;
+      const MAX_SEEK_EVENTS = 500;
+      const vector = Array.isArray(b.playbackVector) ? b.playbackVector.slice(0, MAX_VECTOR_LEN) : [];
+      const seeks = Array.isArray(b.seekEvents) ? b.seekEvents.slice(0, MAX_SEEK_EVENTS) : [];
+
+      // Ensure vector contains only 0/1 numbers
+      const safeVector = vector.map((v: unknown) => (v === 1 ? 1 : 0));
+      // Ensure seek events have numeric from/to
+      const safeSeeks = seeks
+        .filter((e: unknown): e is { from: number; to: number } =>
+          typeof e === 'object' && e !== null && typeof (e as any).from === 'number' && typeof (e as any).to === 'number')
+        .map((e: { from: number; to: number }) => ({ from: Math.floor(e.from), to: Math.floor(e.to) }));
+
       await db.insert(videoHeatmapViews).values({
-        sessionId: String(b.sessionId),
-        videoId: String(b.videoId),
-        pageSlug: String(b.pageSlug),
-        playbackVector: JSON.stringify(b.playbackVector ?? []),
-        seekEvents: JSON.stringify(b.seekEvents ?? []),
+        sessionId: String(b.sessionId).slice(0, 100),
+        videoId: String(b.videoId).slice(0, 255),
+        pageSlug: String(b.pageSlug).slice(0, 100),
+        playbackVector: JSON.stringify(safeVector),
+        seekEvents: JSON.stringify(safeSeeks),
         maxSecondReached: Number(b.maxSecondReached) || 0,
         totalWatchTimeSec: Number(b.totalWatchTimeSec) || 0,
         videoDurationSec: Number(b.videoDurationSec) || 0,
-        deviceType: b.deviceType ? String(b.deviceType) : null,
+        deviceType: b.deviceType ? String(b.deviceType).slice(0, 50) : null,
       });
 
       res.json({ success: true });

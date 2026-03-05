@@ -30,12 +30,17 @@ export function useVideoHeatmap({
   const durationRef = useRef(0);
   const maxSecondRef = useRef(0);
   const seekFromRef = useRef<number | null>(null);
-  const sentRef = useRef(false);
   const lastSecondRef = useRef(-1);
+  // Track the max second that was already sent to avoid duplicate rows
+  const lastSentMaxSecondRef = useRef(-1);
+  const sendingRef = useRef(false);
 
   const sendData = useCallback(() => {
-    if (sentRef.current || vectorRef.current.length === 0) return;
-    sentRef.current = true;
+    // Only send if there's new playback data since last send
+    if (sendingRef.current || vectorRef.current.length === 0) return;
+    if (maxSecondRef.current <= lastSentMaxSecondRef.current) return;
+    sendingRef.current = true;
+    lastSentMaxSecondRef.current = maxSecondRef.current;
 
     const totalWatched = vectorRef.current.reduce((sum, v) => sum + v, 0);
 
@@ -62,6 +67,8 @@ export function useVideoHeatmap({
     } else {
       fetch(url, { method: "POST", body: payload, headers: { "Content-Type": "application/json" }, keepalive: true }).catch(() => {});
     }
+
+    sendingRef.current = false;
   }, [sessionId, videoId, pageSlug]);
 
   // Send on page unload
@@ -120,15 +127,10 @@ export function useVideoHeatmap({
   }, []);
 
   const handlePause = useCallback(() => {
-    // Reset sent flag so we can send updated data later
-    sentRef.current = false;
     sendData();
-    // Allow re-sending on next pause/end
-    sentRef.current = false;
   }, [sendData]);
 
   const handleEnded = useCallback(() => {
-    sentRef.current = false;
     sendData();
   }, [sendData]);
 

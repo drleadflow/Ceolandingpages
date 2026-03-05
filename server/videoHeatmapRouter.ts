@@ -13,8 +13,8 @@ export const videoHeatmapRouter = router({
         sessionId: z.string().min(1),
         videoId: z.string().min(1),
         pageSlug: z.string().min(1),
-        playbackVector: z.array(z.number()).default([]),
-        seekEvents: z.array(z.object({ from: z.number(), to: z.number() })).default([]),
+        playbackVector: z.array(z.number().min(0).max(1)).max(7200).default([]),
+        seekEvents: z.array(z.object({ from: z.number().min(0), to: z.number().min(0) })).max(500).default([]),
         maxSecondReached: z.number().default(0),
         totalWatchTimeSec: z.number().default(0),
         videoDurationSec: z.number().default(0),
@@ -50,12 +50,13 @@ export const videoHeatmapRouter = router({
       const rows = await db
         .select({ playbackVector: videoHeatmapViews.playbackVector, videoDurationSec: videoHeatmapViews.videoDurationSec })
         .from(videoHeatmapViews)
-        .where(eq(videoHeatmapViews.videoId, input.videoId));
+        .where(eq(videoHeatmapViews.videoId, input.videoId))
+        .limit(5000);
 
       if (rows.length === 0) return { retention: [], totalViews: 0 };
 
-      // Find max duration across all views
-      const maxDuration = Math.max(...rows.map((r) => r.videoDurationSec ?? 0));
+      // Find max duration across all views (reduce instead of spread to avoid stack overflow)
+      const maxDuration = rows.reduce((m, r) => Math.max(m, r.videoDurationSec ?? 0), 0);
       if (maxDuration === 0) return { retention: [], totalViews: 0 };
 
       // Sum vectors element-wise
@@ -88,9 +89,10 @@ export const videoHeatmapRouter = router({
       const rows = await db
         .select({ seekEvents: videoHeatmapViews.seekEvents, videoDurationSec: videoHeatmapViews.videoDurationSec })
         .from(videoHeatmapViews)
-        .where(eq(videoHeatmapViews.videoId, input.videoId));
+        .where(eq(videoHeatmapViews.videoId, input.videoId))
+        .limit(5000);
 
-      const maxDuration = Math.max(...rows.map((r) => r.videoDurationSec ?? 0), 1);
+      const maxDuration = rows.reduce((m, r) => Math.max(m, r.videoDurationSec ?? 0), 1);
 
       // Build per-second skip/rewind counts
       const skips = new Array(maxDuration).fill(0);
