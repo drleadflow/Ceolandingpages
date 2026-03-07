@@ -206,6 +206,8 @@ export const funnelAdminRouter = router({
           videoUrl: z.string().optional(),
           videoOverlayStyle: z.string().optional(),
           senjaWidgetId: z.string().optional(),
+          headerTrackingCode: z.string().optional(),
+          bodyTrackingCode: z.string().optional(),
           isActive: z.number().optional(),
         }),
       )
@@ -272,7 +274,8 @@ export const funnelAdminRouter = router({
         const allowedFields = [
           "headline", "subheadline", "bodyText", "ctaText", "declineText",
           "originalPrice", "salePrice", "valueStackItems", "faqItems",
-          "heroImageUrl", "videoUrl", "videoOverlayStyle", "senjaWidgetId", "isActive",
+          "heroImageUrl", "videoUrl", "videoOverlayStyle", "senjaWidgetId",
+          "headerTrackingCode", "bodyTrackingCode", "isActive",
         ];
         for (const field of allowedFields) {
           if (draft[field] !== undefined) publishSet[field] = draft[field];

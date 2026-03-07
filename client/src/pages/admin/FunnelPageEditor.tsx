@@ -56,6 +56,8 @@ interface FormState {
   videoUrl: string;
   videoOverlayStyle: string;
   senjaWidgetId: string;
+  headerTrackingCode: string;
+  bodyTrackingCode: string;
   valueStackItems: string[];
   faqItems: FaqItem[];
 }
@@ -72,6 +74,8 @@ const EMPTY_FORM: FormState = {
   videoUrl: "",
   videoOverlayStyle: "front-and-center",
   senjaWidgetId: "",
+  headerTrackingCode: "",
+  bodyTrackingCode: "",
   valueStackItems: [],
   faqItems: [],
 };
@@ -119,6 +123,8 @@ function dataToForm(data: Record<string, unknown>): FormState {
     videoUrl: String(data.videoUrl ?? ""),
     videoOverlayStyle: String(data.videoOverlayStyle ?? "front-and-center"),
     senjaWidgetId: String(data.senjaWidgetId ?? ""),
+    headerTrackingCode: String(data.headerTrackingCode ?? ""),
+    bodyTrackingCode: String(data.bodyTrackingCode ?? ""),
     valueStackItems: parseValueStack(data.valueStackItems),
     faqItems: parseFaqItems(data.faqItems),
   };
@@ -138,6 +144,8 @@ function formToPayload(slug: PageSlug, form: FormState) {
     videoUrl: form.videoUrl || undefined,
     videoOverlayStyle: form.videoOverlayStyle || undefined,
     senjaWidgetId: form.senjaWidgetId || undefined,
+    headerTrackingCode: form.headerTrackingCode || undefined,
+    bodyTrackingCode: form.bodyTrackingCode || undefined,
     valueStackItems: JSON.stringify(form.valueStackItems),
     faqItems: JSON.stringify(form.faqItems),
   };
@@ -688,6 +696,37 @@ function PageEditorPanel({ slug, showPreview }: PageEditorPanelProps) {
           placeholder="Senja embed widget ID"
           className="bg-slate-800 border-slate-600 text-slate-200 placeholder:text-slate-500"
         />
+      </div>
+
+      {/* ── Tracking Codes ── */}
+      <div className="border-t border-slate-700 pt-6 mt-6">
+        <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">Tracking Codes</h3>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-slate-300">Header Tracking Code</Label>
+            <Textarea
+              value={form.headerTrackingCode}
+              onChange={(e) => setField("headerTrackingCode", e.target.value)}
+              placeholder={"<!-- Paste scripts for <head> -->\n<script>...</script>"}
+              rows={5}
+              className="bg-slate-800 border-slate-600 text-slate-200 placeholder:text-slate-500 font-mono text-xs"
+            />
+            <p className="text-xs text-slate-500">Scripts injected into the page &lt;head&gt;. Use for Meta Pixel, GTM, analytics, etc.</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-slate-300">Body Tracking Code</Label>
+            <Textarea
+              value={form.bodyTrackingCode}
+              onChange={(e) => setField("bodyTrackingCode", e.target.value)}
+              placeholder={"<!-- Paste scripts for <body> -->\n<noscript>...</noscript>"}
+              rows={5}
+              className="bg-slate-800 border-slate-600 text-slate-200 placeholder:text-slate-500 font-mono text-xs"
+            />
+            <p className="text-xs text-slate-500">Scripts injected after the opening &lt;body&gt; tag. Use for GTM noscript, chatbots, etc.</p>
+          </div>
+        </div>
       </div>
 
       <div className="space-y-2">

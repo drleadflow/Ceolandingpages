@@ -175,6 +175,8 @@ export const funnelPageContent = mysqlTable("funnelPageContent", {
   videoUrl: varchar("videoUrl", { length: 500 }),
   videoOverlayStyle: varchar("videoOverlayStyle", { length: 50 }),
   senjaWidgetId: varchar("senjaWidgetId", { length: 255 }),
+  headerTrackingCode: text("headerTrackingCode"), // Custom scripts injected into <head>
+  bodyTrackingCode: text("bodyTrackingCode"), // Custom scripts injected after <body>
   draftContent: text("draftContent"), // JSON blob of all editable fields (unpublished draft)
   isActive: int("isActive").default(1).notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
