@@ -32,6 +32,7 @@ import FunnelBuilder from "./pages/admin/FunnelBuilder";
 import FunnelStepAnalytics from "./pages/admin/FunnelStepAnalytics";
 import FunnelTemplates from "./pages/admin/FunnelTemplates";
 import DynamicFunnel from "./pages/funnel/DynamicFunnel";
+import MasterclassOptIn from "./pages/funnel/MasterclassOptIn";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -48,6 +49,7 @@ function Router() {
       <Route path="/thank-you" component={ThankYouPage} />
       <Route path="/book-session" component={BookingPage} />
       <Route path="/call-prep" component={CallPrepPage} />
+      <Route path="/masterclass" component={MasterclassOptIn} />
       <Route path="/agency" component={AgencyPage} />
       <Route path="/v/:playbackId" component={VideoPlayerPage} />
       <Route path="/admin/builder/:id/analytics">

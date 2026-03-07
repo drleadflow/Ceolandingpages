@@ -12,7 +12,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 
-type PageSlug = "sales" | "sales-dual" | "agency" | "quiz" | "upsell" | "downsell" | "thank-you" | "book-session" | "call-prep";
+type PageSlug = "sales" | "sales-dual" | "agency" | "quiz" | "upsell" | "downsell" | "thank-you" | "book-session" | "call-prep" | "masterclass";
 
 interface FormState {
   headline: string;

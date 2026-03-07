@@ -9,9 +9,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Trash2, Plus, Save, ExternalLink, Eye, EyeOff, Monitor, Smartphone, Upload, X, FileEdit, Sparkles, Film, Check } from "lucide-react";
 import { AiAssistantPanel } from "@/components/admin/AiAssistantPanel";
 
-type PageSlug = "sales" | "sales-dual" | "agency" | "quiz" | "upsell" | "downsell" | "thank-you" | "book-session" | "call-prep";
+type PageSlug = "sales" | "sales-dual" | "agency" | "quiz" | "upsell" | "downsell" | "thank-you" | "book-session" | "call-prep" | "masterclass";
 
-const PAGE_SLUGS: PageSlug[] = ["sales", "sales-dual", "agency", "quiz", "upsell", "downsell", "thank-you", "book-session", "call-prep"];
+const PAGE_SLUGS: PageSlug[] = ["sales", "sales-dual", "masterclass", "agency", "quiz", "upsell", "downsell", "thank-you", "book-session", "call-prep"];
 
 const SLUG_TO_PATH: Record<PageSlug, string> = {
   sales: "/fb-ads-course",
@@ -23,6 +23,7 @@ const SLUG_TO_PATH: Record<PageSlug, string> = {
   "thank-you": "/thank-you",
   "book-session": "/book-session",
   "call-prep": "/call-prep",
+  masterclass: "/masterclass",
 };
 
 const SLUG_LABELS: Record<PageSlug, string> = {
@@ -35,6 +36,7 @@ const SLUG_LABELS: Record<PageSlug, string> = {
   "thank-you": "Thank You Page",
   "book-session": "Booking Page",
   "call-prep": "Call Prep Page",
+  masterclass: "Masterclass Opt-In",
 };
 
 interface FaqItem {
