@@ -894,41 +894,33 @@ export function FunnelVideoPlayer({
               ref={muxPlayerRef}
               playbackId={parsed.videoId ?? ""}
               autoPlay="muted"
+              muted
+              playsInline
               startTime={0}
               disableCookies
               className="aspect-video w-full"
               onLoadStart={() => {
-                // Reset seek guard on each new load
                 muxSeekDone.current = false;
               }}
-              onLoadedData={() => {
-                // Force seek to 0 as soon as data is loaded (before playback begins)
+              onLoadedMetadata={(e: any) => {
+                // Force seek to 0 immediately when metadata is available
                 const el = muxPlayerRef.current;
                 if (el && !muxSeekDone.current) {
                   el.currentTime = 0;
                   muxSeekDone.current = true;
                 }
-              }}
-              onCanPlay={() => {
-                // Double-check: if still not at start, force it again
-                const el = muxPlayerRef.current;
-                if (el && el.currentTime > 1) {
-                  el.currentTime = 0;
-                }
                 setPlayerReady(true);
-              }}
-              onPlaying={() => {
-                // Final safeguard: on first play, if not near start, seek back
-                const el = muxPlayerRef.current;
-                if (el && !muxSeekDone.current && el.currentTime > 2) {
-                  el.currentTime = 0;
-                  muxSeekDone.current = true;
+                if (enableHeatmap) {
+                  heatmap.handleLoadedMetadata(e.target?.duration ?? 0);
                 }
               }}
-              muted={state === "playing-muted"}
-              onLoadedMetadata={enableHeatmap ? (e: any) => {
-                heatmap.handleLoadedMetadata(e.target?.duration ?? 0);
-              } : undefined}
+              onPlay={() => {
+                // Final safeguard: force to 0 on first play if not at start
+                const el = muxPlayerRef.current;
+                if (el && el.currentTime > 2) {
+                  el.currentTime = 0;
+                }
+              }}
               onTimeUpdate={enableHeatmap ? (e: any) => {
                 heatmap.handleTimeUpdate(e.target?.currentTime ?? 0);
               } : undefined}
