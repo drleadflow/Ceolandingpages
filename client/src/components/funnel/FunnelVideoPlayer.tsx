@@ -892,8 +892,16 @@ export function FunnelVideoPlayer({
               playbackId={parsed.videoId ?? ""}
               autoPlay="muted"
               startTime={0}
+              disableCookies
               className="aspect-video w-full"
-              onCanPlay={() => setPlayerReady(true)}
+              onCanPlay={(e: any) => {
+                // Force playback to start from 0 in case of cached position
+                const el = e.target;
+                if (el && el.currentTime > 1) {
+                  el.currentTime = 0;
+                }
+                setPlayerReady(true);
+              }}
               muted={state === "playing-muted"}
               onLoadedMetadata={enableHeatmap ? (e: any) => {
                 heatmap.handleLoadedMetadata(e.target?.duration ?? 0);
