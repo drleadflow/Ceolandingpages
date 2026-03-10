@@ -636,12 +636,20 @@ export default function SmartQuiz() {
   const [loadingStage, setLoadingStage] = useState(0);
   const [loadingProgress, setLoadingProgress] = useState(0);
 
+  const LOADING_GIFS = [
+    "/loading-1.gif",
+    "/loading-2.gif",
+    "/loading-3.gif",
+    "/loading-4.gif",
+    "/loading-5.gif",
+  ];
+
   const loadingStages = [
-    { emoji: "🔍", text: "Diagnosing your bottlenecks...", progress: 20 },
-    { emoji: "📊", text: "Analyzing your business health...", progress: 40 },
-    { emoji: "🎯", text: "Identifying your biggest growth levers...", progress: 60 },
-    { emoji: "📋", text: "Creating your custom playbooks...", progress: 80 },
-    { emoji: "✨", text: "Finalizing your roadmap...", progress: 100 },
+    { text: "Diagnosing your bottlenecks...", progress: 20 },
+    { text: "Analyzing your business health...", progress: 40 },
+    { text: "Identifying your biggest growth levers...", progress: 60 },
+    { text: "Creating your custom playbooks...", progress: 80 },
+    { text: "Finalizing your roadmap...", progress: 100 },
   ];
 
   useEffect(() => {
@@ -677,10 +685,15 @@ export default function SmartQuiz() {
 
   if (generateRoadmap.isPending) {
     const currentStage = loadingStages[loadingStage];
+    const currentGif = LOADING_GIFS[loadingStage % LOADING_GIFS.length];
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--titan-background)' }}>
         <div className="text-center space-y-6 max-w-md mx-auto px-4">
-          <div className="text-6xl animate-pulse">{currentStage.emoji}</div>
+          <img
+            src={currentGif}
+            alt="Loading"
+            className="mx-auto w-48 h-48 object-contain rounded-xl"
+          />
           <h2 style={{ color: 'var(--titan-text-primary)', fontSize: 'var(--titan-size-h2)', fontWeight: 600 }}>
             {currentStage.text}
           </h2>
