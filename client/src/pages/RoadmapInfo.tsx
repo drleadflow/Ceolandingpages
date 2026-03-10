@@ -1,8 +1,51 @@
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { SenjaTestimonials } from "@/components/funnel/SenjaTestimonials";
+import { trpc } from "@/lib/trpc";
+import { usePixelTracking } from "@/hooks/usePixelTracking";
+import { getSessionId } from "@/lib/funnelTracking";
+
+const DEFAULTS = {
+  headline: "Get Your Free Personalized CEO Scaling Roadmap",
+  subheadline: "...in Under 3 Minutes",
+  bodyText: "Discover your #1 business bottleneck and get a personalized action plan to break through your revenue plateau — whether you're at $30K, $60K, or $90K/month.",
+  ctaText: "Start My Free Roadmap",
+  faqItems: [
+    { q: "Is this really free?", a: "Yes, 100% free. No credit card required. We built this tool to help health professionals identify their biggest growth opportunities." },
+    { q: "How long does it take?", a: "The assessment takes about 3 minutes. Your personalized roadmap is generated instantly." },
+    { q: "What kind of businesses is this for?", a: "This is designed specifically for health professionals — chiropractors, dentists, med spas, physical therapists, and similar practices doing $5K-$100K+/month." },
+    { q: "How is the roadmap personalized?", a: "Our AI analyzes your specific business type, revenue level, marketing efforts, operations, and goals to create a custom action plan — not a one-size-fits-all template." },
+    { q: "What happens after I complete the assessment?", a: "You'll immediately get access to your dashboard with your Business Health Score, gap analysis, personalized roadmap, and 4 bonus playbooks. We'll also email you a link so you can access it anytime." },
+  ],
+};
 
 export default function RoadmapInfo() {
+  const isPreview = new URLSearchParams(window.location.search).has("preview");
+  const cmsPublicQuery = trpc.funnelAdmin.pages.getPublic.useQuery({ slug: "roadmap-info" }, { enabled: !isPreview });
+  const cmsPreviewQuery = trpc.funnelAdmin.pages.getPreview.useQuery({ slug: "roadmap-info" }, { enabled: isPreview });
+  const cmsContent = isPreview ? cmsPreviewQuery.data : cmsPublicQuery.data;
+
+  const sessionId = getSessionId();
+  const { fireEvent } = usePixelTracking("roadmap-info");
+  const trackEvent = trpc.funnelAdmin.events.track.useMutation();
+
+  useEffect(() => {
+    if (sessionId) {
+      trackEvent.mutate({ sessionId, eventType: "page_view", pageSlug: "roadmap-info" });
+      fireEvent("page_view");
+    }
+  }, [sessionId]);
+
+  const content = {
+    headline: cmsContent?.headline ?? DEFAULTS.headline,
+    subheadline: cmsContent?.subheadline ?? DEFAULTS.subheadline,
+    bodyText: cmsContent?.bodyText ?? DEFAULTS.bodyText,
+    ctaText: cmsContent?.ctaText ?? DEFAULTS.ctaText,
+    faqItems: cmsContent?.faqItems ? JSON.parse(cmsContent.faqItems) as Array<{ q: string; a: string }> : DEFAULTS.faqItems,
+    senjaWidgetId: cmsContent?.senjaWidgetId ?? undefined,
+  };
+
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: 'var(--titan-font-base)' }}>
 
@@ -15,7 +58,7 @@ export default function RoadmapInfo() {
             className="rounded-lg font-semibold px-5 py-2 text-sm shadow-sm hover:shadow-md transition-all"
             style={{ background: 'var(--titan-grad-primary)', color: '#FFFFFF' }}
           >
-            Start My Roadmap
+            {content.ctaText}
           </Button>
         </Link>
       </nav>
@@ -38,7 +81,7 @@ export default function RoadmapInfo() {
               lineHeight: 'var(--titan-leading-tight)',
             }}
           >
-            Get Your Free Personalized CEO Scaling Roadmap
+            {content.headline}
             <span
               className="block mt-2"
               style={{
@@ -48,7 +91,7 @@ export default function RoadmapInfo() {
                 backgroundClip: 'text',
               }}
             >
-              ...in Under 3 Minutes
+              {content.subheadline}
             </span>
           </h1>
 
@@ -59,8 +102,7 @@ export default function RoadmapInfo() {
               lineHeight: 'var(--titan-leading-relaxed)',
             }}
           >
-            Discover your #1 business bottleneck and get a personalized action plan to break
-            through your revenue plateau — whether you're at $30K, $60K, or $90K/month.
+            {content.bodyText}
           </p>
 
           <div className="w-full max-w-2xl mx-auto">
@@ -75,7 +117,7 @@ export default function RoadmapInfo() {
                   cursor: 'pointer',
                 }}
               >
-                Start My Free Roadmap
+                {content.ctaText}
               </button>
             </Link>
             <p
@@ -232,7 +274,7 @@ export default function RoadmapInfo() {
                 className="text-lg px-10 py-6 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
                 style={{ background: 'var(--titan-grad-primary)', color: '#FFFFFF', border: 'none', cursor: 'pointer' }}
               >
-                Start My Free Roadmap
+                {content.ctaText}
               </button>
             </Link>
           </div>
@@ -296,7 +338,7 @@ export default function RoadmapInfo() {
               What Health Professionals Are Saying
             </h2>
           </div>
-          <SenjaTestimonials />
+          <SenjaTestimonials widgetId={content.senjaWidgetId} />
         </div>
       </section>
 
@@ -343,7 +385,7 @@ export default function RoadmapInfo() {
                 className="text-lg px-10 py-6 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
                 style={{ background: 'var(--titan-grad-primary)', color: '#FFFFFF', border: 'none', cursor: 'pointer' }}
               >
-                Start My Free Roadmap
+                {content.ctaText}
               </button>
             </Link>
           </div>
@@ -363,28 +405,7 @@ export default function RoadmapInfo() {
           </div>
 
           <div className="space-y-4">
-            {[
-              {
-                q: 'Is this really free?',
-                a: 'Yes, 100% free. No credit card required. We built this tool to help health professionals identify their biggest growth opportunities.',
-              },
-              {
-                q: 'How long does it take?',
-                a: 'The assessment takes about 3 minutes. Your personalized roadmap is generated instantly.',
-              },
-              {
-                q: "What kind of businesses is this for?",
-                a: 'This is designed specifically for health professionals — chiropractors, dentists, med spas, physical therapists, and similar practices doing $5K-$100K+/month.',
-              },
-              {
-                q: 'How is the roadmap personalized?',
-                a: 'Our AI analyzes your specific business type, revenue level, marketing efforts, operations, and goals to create a custom action plan — not a one-size-fits-all template.',
-              },
-              {
-                q: 'What happens after I complete the assessment?',
-                a: "You'll immediately get access to your dashboard with your Business Health Score, gap analysis, personalized roadmap, and 4 bonus playbooks. We'll also email you a link so you can access it anytime.",
-              },
-            ].map((item, idx) => (
+            {content.faqItems.map((item, idx) => (
               <details
                 key={idx}
                 className="bg-white rounded-xl border overflow-hidden group"
@@ -440,7 +461,7 @@ export default function RoadmapInfo() {
                 className="text-lg px-10 py-6 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
                 style={{ background: 'var(--titan-grad-primary)', color: '#FFFFFF', border: 'none', cursor: 'pointer' }}
               >
-                Start My Free Roadmap
+                {content.ctaText}
               </button>
             </Link>
             <p className="text-sm" style={{ color: '#64748B' }}>

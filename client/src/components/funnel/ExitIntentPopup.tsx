@@ -12,11 +12,14 @@ export function ExitIntentPopup({ quizRef = "sales-exit" }: ExitIntentPopupProps
     // Desktop only — skip on touch devices
     if ("ontouchstart" in window || navigator.maxTouchPoints > 0) return;
 
+    const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+
     const handler = (e: MouseEvent) => {
       if (e.clientY > 0) return; // only fire when cursor leaves top of viewport
-      if (sessionStorage.getItem("exit_popup_shown")) return;
 
-      sessionStorage.setItem("exit_popup_shown", "1");
+      const dismissedAt = sessionStorage.getItem("exit_popup_dismissed_at");
+      if (dismissedAt && Date.now() - Number(dismissedAt) < COOLDOWN_MS) return;
+
       setVisible(true);
     };
 
@@ -30,7 +33,7 @@ export function ExitIntentPopup({ quizRef = "sales-exit" }: ExitIntentPopupProps
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="relative w-full max-w-lg rounded-2xl bg-white p-8 shadow-2xl">
         <button
-          onClick={() => setVisible(false)}
+          onClick={() => { sessionStorage.setItem("exit_popup_dismissed_at", String(Date.now())); setVisible(false); }}
           className="absolute right-4 top-4 z-10 rounded-full p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
           aria-label="Close"
         >
@@ -60,7 +63,7 @@ export function ExitIntentPopup({ quizRef = "sales-exit" }: ExitIntentPopupProps
           </a>
 
           <button
-            onClick={() => setVisible(false)}
+            onClick={() => { sessionStorage.setItem("exit_popup_dismissed_at", String(Date.now())); setVisible(false); }}
             className="mt-4 text-sm underline"
             style={{ color: "var(--titan-text-muted)" }}
           >

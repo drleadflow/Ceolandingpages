@@ -10,6 +10,7 @@ import {
   funnelOrders,
   funnelOrderItems,
   videoEvents,
+  siteSettings,
 } from "../drizzle/schema";
 import { pushPurchaseToGHL, pushToZapier } from "./ghlWebhook";
 import { fireFacebookCapi, getCapiPixelsForPage, fireHyrosSale, getHyrosPixelsForPage } from "./trackingService";
@@ -34,7 +35,10 @@ export const funnelRouter = router({
         const db = await getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
 
-        const whop = getWhop();
+        // Check DB for test mode override
+        const [testModeSetting] = await db.select().from(siteSettings).where(eq(siteSettings.key, "checkout_test_mode")).limit(1);
+        const isTestMode = testModeSetting?.value === "true" ? true : testModeSetting?.value === "false" ? false : undefined;
+        const whop = getWhop(isTestMode);
 
         // Get the requested product (defaults to fb-ads-course for backward compat)
         const slug = input.productSlug ?? "fb-ads-course";
@@ -97,7 +101,7 @@ export const funnelRouter = router({
           checkoutConfigId: checkoutConfig.id,
           orderId,
           amount: product.priceInCents,
-          sandbox: ENV.whopSandbox,
+          sandbox: isTestMode ?? ENV.whopSandbox,
         };
       }),
 

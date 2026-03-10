@@ -16,6 +16,7 @@ import {
   trackingPixels,
   muxAssets,
   videoEvents,
+  siteSettings,
 } from "../drizzle/schema";
 import { createDirectUpload, getAssetStatus, listAssets, deleteAsset } from "./muxService";
 
@@ -845,6 +846,34 @@ export const funnelAdminRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "No fields to update" });
         }
         await db.update(muxAssets).set(updateSet).where(eq(muxAssets.id, input.id));
+        return { success: true };
+      }),
+  }),
+
+  // ── Settings ────────────────────────────────────────────────────────────────
+
+  settings: router({
+    get: adminProcedure
+      .input(z.object({ key: z.string() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+        const rows = await db.select().from(siteSettings).where(eq(siteSettings.key, input.key)).limit(1);
+        if (rows.length === 0) return { key: input.key, value: null };
+        return { key: rows[0].key, value: rows[0].value };
+      }),
+
+    update: adminProcedure
+      .input(z.object({ key: z.string(), value: z.string() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+        const existing = await db.select({ id: siteSettings.id }).from(siteSettings).where(eq(siteSettings.key, input.key)).limit(1);
+        if (existing.length > 0) {
+          await db.update(siteSettings).set({ value: input.value }).where(eq(siteSettings.key, input.key));
+        } else {
+          await db.insert(siteSettings).values({ key: input.key, value: input.value });
+        }
         return { success: true };
       }),
   }),

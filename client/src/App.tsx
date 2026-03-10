@@ -34,6 +34,7 @@ import FunnelTemplates from "./pages/admin/FunnelTemplates";
 import DynamicFunnel from "./pages/funnel/DynamicFunnel";
 import MasterclassOptIn from "./pages/funnel/MasterclassOptIn";
 import RoadmapInfo from "./pages/RoadmapInfo";
+import SettingsPage from "./pages/admin/SettingsPage";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -89,6 +90,9 @@ function Router() {
       </Route>
       <Route path="/admin/video-analytics">
         <AdminLayout><VideoAnalytics /></AdminLayout>
+      </Route>
+      <Route path="/admin/settings">
+        <AdminLayout><SettingsPage /></AdminLayout>
       </Route>
       <Route path="/admin">
         <AdminLayout><AdminLeads /></AdminLayout>

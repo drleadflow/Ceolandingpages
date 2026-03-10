@@ -10,6 +10,7 @@ import {
   Video,
   Layers,
   BarChart3,
+  Settings,
 } from "lucide-react";
 
 type NavItem = {
@@ -28,6 +29,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Videos", path: "/admin/video-library", icon: <Video className="w-4 h-4" /> },
   { label: "Video Analytics", path: "/admin/video-analytics", icon: <BarChart3 className="w-4 h-4" /> },
   { label: "Builder", path: "/admin/builder", icon: <Layers className="w-4 h-4" /> },
+  { label: "Settings", path: "/admin/settings", icon: <Settings className="w-4 h-4" /> },
 ];
 
 type AdminLayoutProps = {

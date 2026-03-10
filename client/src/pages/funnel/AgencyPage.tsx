@@ -80,6 +80,7 @@ export default function AgencyPage() {
   const trackEvent = trpc.funnelAdmin.events.track.useMutation();
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     if (sessionId) {
       trackEvent.mutate({
         sessionId,
@@ -98,8 +99,15 @@ export default function AgencyPage() {
     <div className="min-h-screen" style={{ background: "var(--titan-background)" }}>
       <FunnelNav />
 
+      {/* Back nav */}
+      <div className="mx-auto max-w-4xl px-4 pt-4">
+        <a href="/fb-ads-course" className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors">
+          ← Back to Course Options
+        </a>
+      </div>
+
       {/* Hero */}
-      <section className="mx-auto max-w-4xl px-4 py-16 text-center">
+      <section className="mx-auto max-w-4xl px-4 py-16 text-center" style={{ background: "linear-gradient(180deg, #EEF2FF 0%, transparent 100%)" }}>
         <div className="mb-4 inline-block rounded-full bg-indigo-50 px-4 py-1 text-sm font-semibold text-indigo-600">
           Done-For-You Patient Acquisition
         </div>

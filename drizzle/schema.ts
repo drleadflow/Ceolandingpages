@@ -400,3 +400,14 @@ export const funnelTemplates = mysqlTable("funnelTemplates", {
 
 export type FunnelTemplate = typeof funnelTemplates.$inferSelect;
 export type InsertFunnelTemplate = typeof funnelTemplates.$inferInsert;
+
+// ── Site Settings (key-value store for admin toggles) ──
+
+export const siteSettings = mysqlTable("siteSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  key: varchar("key", { length: 100 }).notNull().unique(),
+  value: text("value"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
+});
+
+export type SiteSetting = typeof siteSettings.$inferSelect;
