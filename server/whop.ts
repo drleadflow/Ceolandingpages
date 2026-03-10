@@ -11,12 +11,13 @@ export function getWhop(forceSandbox?: boolean) {
     _whop = null;
   }
   if (!_whop) {
-    if (!ENV.whopApiKey) {
-      throw new Error("WHOP_API_KEY is not configured");
+    const apiKey = useSandbox ? (ENV.whopSandboxApiKey || ENV.whopApiKey) : ENV.whopApiKey;
+    if (!apiKey) {
+      throw new Error(useSandbox ? "WHOP_SANDBOX_API_KEY is not configured" : "WHOP_API_KEY is not configured");
     }
     _whopSandbox = useSandbox;
     _whop = new Whop({
-      apiKey: ENV.whopApiKey,
+      apiKey,
       ...(useSandbox ? { baseURL: "https://sandbox-api.whop.com/api/v1" } : {}),
     });
   }

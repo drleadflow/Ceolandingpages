@@ -17,6 +17,7 @@ export const ENV = {
   zapierCourseUrl: process.env.ZAPIER_COURSE_URL ?? "",
   zapierVaultUrl: process.env.ZAPIER_VAULT_URL ?? "",
   whopApiKey: process.env.WHOP_API_KEY ?? "",
+  whopSandboxApiKey: process.env.WHOP_SANDBOX_API_KEY ?? "",
   whopCompanyId: process.env.WHOP_COMPANY_ID ?? "",
   whopWebhookSecret: process.env.WHOP_WEBHOOK_SECRET ?? "",
   whopSandbox: process.env.WHOP_SANDBOX === "true",
