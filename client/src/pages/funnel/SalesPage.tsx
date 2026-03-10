@@ -80,11 +80,8 @@ export default function SalesPage() {
   const isRevealed = (threshold: number) =>
     !smartCtaEnabled || !content.videoUrl || watchPercent >= threshold;
 
-  // Dual-path flow state
-  const [showDualPath] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("flow") === "dual";
-  });
+  // Dual-path flow is now the default
+  const showDualPath = true;
   const [selectedPath, setSelectedPath] = useState<"courses" | null>(null);
   const pricingTiersRef = useRef<HTMLDivElement>(null);
 

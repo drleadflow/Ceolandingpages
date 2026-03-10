@@ -28,10 +28,10 @@ export function ExitIntentPopup({ quizRef = "sales-exit" }: ExitIntentPopupProps
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="relative w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
+      <div className="relative w-full max-w-lg rounded-2xl bg-white p-8 shadow-2xl">
         <button
           onClick={() => setVisible(false)}
-          className="absolute right-4 top-4 rounded-full p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+          className="absolute right-4 top-4 z-10 rounded-full p-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
           aria-label="Close"
         >
           <X className="h-5 w-5" />
@@ -41,12 +41,18 @@ export function ExitIntentPopup({ quizRef = "sales-exit" }: ExitIntentPopupProps
           <h2 className="mb-2 text-2xl font-bold" style={{ color: "var(--titan-text-primary)" }}>
             Wait — Don't Leave Empty-Handed
           </h2>
-          <p className="mb-6 text-sm leading-relaxed" style={{ color: "var(--titan-text-secondary)" }}>
-            Get your free Practice Growth Roadmap. Discover exactly where your practice stands and what to fix first.
+          <p className="mb-4 text-sm leading-relaxed" style={{ color: "var(--titan-text-secondary)" }}>
+            Get your free CEO Scaling Roadmap, dashboard, and 4 bonus playbooks. Discover exactly where your practice stands and what to fix first.
           </p>
 
+          <img
+            src="/roadmap-bundle.png"
+            alt="CEO Scaling Roadmap — Dashboard, Playbooks & More"
+            className="mx-auto mb-5 w-full max-w-md rounded-lg"
+          />
+
           <a
-            href={`/quiz?ref=${quizRef}`}
+            href="/roadmap-info"
             className="inline-block w-full rounded-xl px-8 py-4 text-lg font-bold text-white shadow-lg transition-all hover:shadow-xl"
             style={{ background: "linear-gradient(135deg, var(--titan-gold) 0%, var(--titan-gold-hover) 100%)" }}
           >
