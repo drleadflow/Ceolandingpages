@@ -768,6 +768,8 @@ export function FunnelVideoPlayer({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const ytPlayerRef = useRef<YTPlayer | null>(null);
   const vimeoIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const muxPlayerRef = useRef<any>(null);
+  const muxSeekDone = useRef(false);
 
   // Video heatmap tracking
   const enableHeatmap = !!(heatmapVideoId && heatmapPageSlug && heatmapSessionId);
@@ -889,18 +891,39 @@ export function FunnelVideoPlayer({
 
           {parsed.source === "mux" && (
             <MuxPlayer
+              ref={muxPlayerRef}
               playbackId={parsed.videoId ?? ""}
               autoPlay="muted"
               startTime={0}
               disableCookies
               className="aspect-video w-full"
-              onCanPlay={(e: any) => {
-                // Force playback to start from 0 in case of cached position
-                const el = e.target;
+              onLoadStart={() => {
+                // Reset seek guard on each new load
+                muxSeekDone.current = false;
+              }}
+              onLoadedData={() => {
+                // Force seek to 0 as soon as data is loaded (before playback begins)
+                const el = muxPlayerRef.current;
+                if (el && !muxSeekDone.current) {
+                  el.currentTime = 0;
+                  muxSeekDone.current = true;
+                }
+              }}
+              onCanPlay={() => {
+                // Double-check: if still not at start, force it again
+                const el = muxPlayerRef.current;
                 if (el && el.currentTime > 1) {
                   el.currentTime = 0;
                 }
                 setPlayerReady(true);
+              }}
+              onPlaying={() => {
+                // Final safeguard: on first play, if not near start, seek back
+                const el = muxPlayerRef.current;
+                if (el && !muxSeekDone.current && el.currentTime > 2) {
+                  el.currentTime = 0;
+                  muxSeekDone.current = true;
+                }
               }}
               muted={state === "playing-muted"}
               onLoadedMetadata={enableHeatmap ? (e: any) => {
