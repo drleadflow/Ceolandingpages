@@ -19,6 +19,7 @@ export const ENV = {
   whopApiKey: process.env.WHOP_API_KEY ?? "",
   whopSandboxApiKey: process.env.WHOP_SANDBOX_API_KEY ?? "",
   whopCompanyId: process.env.WHOP_COMPANY_ID ?? "",
+  whopSandboxCompanyId: process.env.WHOP_SANDBOX_COMPANY_ID ?? "",
   whopWebhookSecret: process.env.WHOP_WEBHOOK_SECRET ?? "",
   whopSandbox: process.env.WHOP_SANDBOX === "true",
   anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
