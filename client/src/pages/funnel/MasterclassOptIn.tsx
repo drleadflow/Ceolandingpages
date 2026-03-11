@@ -315,11 +315,12 @@ export default function MasterclassOptIn() {
         <div className="rounded-2xl border border-[var(--titan-border)] bg-white p-8">
           {/* Photo + Name + Stats */}
           <div className="flex flex-col items-center text-center mb-6">
-            <div className="mb-4 h-28 w-28 overflow-hidden rounded-full border-4 border-blue-100 shadow-lg">
+            <div className="mb-4 h-32 w-32 overflow-hidden rounded-full border-4 border-blue-100 shadow-lg">
               <img
                 src="/dr-emeka-headshot.jpg"
                 alt="Dr. Emeka Ajufo"
-                className="h-full w-full object-cover object-top"
+                className="w-full object-cover"
+                style={{ height: "160%", objectPosition: "center 25%" }}
               />
             </div>
             <h3
@@ -376,20 +377,17 @@ export default function MasterclassOptIn() {
                 <span className="text-lg font-black tracking-tight" style={{ color: "#333", fontFamily: "Georgia, serif" }}>OWN</span>
                 <span className="text-[10px] font-medium text-gray-500 leading-tight">Oprah Winfrey<br/>Network</span>
               </div>
-              {/* Newsmax — Wake Up America */}
+              {/* Wake Up America */}
               <div className="flex flex-col items-center opacity-70 grayscale hover:grayscale-0 hover:opacity-100 transition">
-                <span className="text-sm font-extrabold tracking-tight" style={{ color: "#1a5dad" }}>NEWSMAX</span>
-                <span className="text-[9px] font-medium text-gray-500">Wake Up America</span>
+                <span className="text-sm font-extrabold tracking-tight" style={{ color: "#333" }}>WAKE UP AMERICA</span>
               </div>
-              {/* Newsmax — National Report */}
+              {/* National Report */}
               <div className="flex flex-col items-center opacity-70 grayscale hover:grayscale-0 hover:opacity-100 transition">
-                <span className="text-sm font-extrabold tracking-tight" style={{ color: "#1a5dad" }}>NEWSMAX</span>
-                <span className="text-[9px] font-medium text-gray-500">National Report</span>
+                <span className="text-sm font-extrabold tracking-tight" style={{ color: "#333" }}>NATIONAL REPORT</span>
               </div>
-              {/* Newsmax — Wellness Report */}
+              {/* Wellness Report */}
               <div className="flex flex-col items-center opacity-70 grayscale hover:grayscale-0 hover:opacity-100 transition">
-                <span className="text-sm font-extrabold tracking-tight" style={{ color: "#1a5dad" }}>NEWSMAX</span>
-                <span className="text-[9px] font-medium text-gray-500">Wellness Report</span>
+                <span className="text-sm font-extrabold tracking-tight" style={{ color: "#333" }}>WELLNESS REPORT</span>
               </div>
               {/* IV Biz Bash */}
               <div className="flex flex-col items-center opacity-70 grayscale hover:grayscale-0 hover:opacity-100 transition">
