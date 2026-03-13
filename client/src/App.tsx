@@ -23,6 +23,7 @@ const FunnelSplitTests = lazy(() => import("./pages/admin/FunnelSplitTests"));
 const TrackingSettings = lazy(() => import("./pages/admin/TrackingSettings"));
 const VideoLibrary = lazy(() => import("./pages/admin/VideoLibrary"));
 const VideoAnalytics = lazy(() => import("./pages/admin/VideoAnalytics"));
+const MasterclassAnalytics = lazy(() => import("./pages/admin/MasterclassAnalytics"));
 const PublicRoadmap = lazy(() => import("./pages/PublicRoadmap"));
 const SharedPlaybook = lazy(() => import("./pages/SharedPlaybook"));
 const UpsellPage = lazy(() => import("./pages/funnel/UpsellPage"));
@@ -95,6 +96,9 @@ function Router() {
       </Route>
       <Route path="/admin/video-analytics">
         <AdminLayout><VideoAnalytics /></AdminLayout>
+      </Route>
+      <Route path="/admin/masterclass">
+        <AdminLayout><MasterclassAnalytics /></AdminLayout>
       </Route>
       <Route path="/admin/settings">
         <AdminLayout><SettingsPage /></AdminLayout>

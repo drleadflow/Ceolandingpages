@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { usePixelTracking } from "@/hooks/usePixelTracking";
+import { getSessionId } from "@/lib/funnelTracking";
 import { trpc } from "@/lib/trpc";
 import { FunnelNav } from "@/components/funnel/FunnelNav";
 import {
@@ -40,7 +41,7 @@ const optInSchema = z.object({
   email: z.string().email("Valid email is required"),
   phone: z.string().min(7, "Phone number is required"),
   practiceType: z.string().min(1, "Practice type is required"),
-  website: z.string().url("Please enter a valid URL (e.g. https://yourpractice.com)"),
+  website: z.string(),
 });
 
 type OptInValues = z.infer<typeof optInSchema>;
@@ -98,7 +99,23 @@ export default function MasterclassOptIn() {
     }
   }, [navigate]);
 
-  usePixelTracking("masterclass");
+  const { fireEvent } = usePixelTracking("masterclass");
+
+  // Dual-tracking: database events + pixel events (same pattern as SalesPage)
+  const trackEvent = trpc.funnelAdmin.events.track.useMutation();
+  const sessionId = getSessionId();
+
+  useEffect(() => {
+    if (sessionId) {
+      trackEvent.mutate({
+        sessionId,
+        eventType: "page_view",
+        pageSlug: "masterclass",
+        metadata: JSON.stringify({ ref: new URLSearchParams(window.location.search).get("ref") ?? undefined }),
+      });
+      fireEvent("page_view");
+    }
+  }, [sessionId]);
 
   const submitLead = trpc.roadmap.submitMasterclassLead.useMutation();
 
@@ -123,18 +140,25 @@ export default function MasterclassOptIn() {
   const onSubmit = async (data: OptInValues) => {
     setIsSubmitting(true);
     try {
+      // Normalize website: auto-prepend https:// if needed, or omit if empty
+      let website: string | undefined;
+      if (data.website && data.website.trim() !== "") {
+        const trimmed = data.website.trim();
+        website = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+      }
+
       // Fire webhook + tracking server-side (don't block navigation)
       submitLead.mutate({
         firstName: data.firstName,
         email: data.email,
         phone: data.phone,
         practiceType: data.practiceType,
-        website: data.website,
+        website,
       });
 
       sessionStorage.setItem(
         "masterclass_lead",
-        JSON.stringify({ firstName: data.firstName, email: data.email, phone: data.phone, practiceType: data.practiceType, website: data.website }),
+        JSON.stringify({ firstName: data.firstName, email: data.email, phone: data.phone, practiceType: data.practiceType, website }),
       );
       navigate("/fb-ads-course");
     } catch {
@@ -529,8 +553,8 @@ export default function MasterclassOptIn() {
               <div>
                 <input
                   {...register("website")}
-                  type="url"
-                  placeholder="Your Practice Website (e.g. https://yourpractice.com)"
+                  type="text"
+                  placeholder="Website (optional — e.g. yourpractice.com)"
                   className="w-full rounded-lg border border-[var(--titan-border)] bg-white px-4 py-3 text-base transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
                   style={{ color: "var(--titan-text-primary)" }}
                 />

@@ -952,7 +952,7 @@ ${input.biggestFrustration}
       email: z.string().email(),
       phone: z.string().optional(),
       practiceType: z.string().min(1),
-      website: z.string().url("Please enter a valid URL").min(1, "Website is required"),
+      website: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       const identifier = getRateLimitIdentifier(ctx.req);

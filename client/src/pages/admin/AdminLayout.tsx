@@ -11,6 +11,7 @@ import {
   Layers,
   BarChart3,
   Settings,
+  GraduationCap,
 } from "lucide-react";
 
 type NavItem = {
@@ -28,6 +29,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Tracking", path: "/admin/funnel/tracking", icon: <Radio className="w-4 h-4" /> },
   { label: "Videos", path: "/admin/video-library", icon: <Video className="w-4 h-4" /> },
   { label: "Video Analytics", path: "/admin/video-analytics", icon: <BarChart3 className="w-4 h-4" /> },
+  { label: "Masterclass", path: "/admin/masterclass", icon: <GraduationCap className="w-4 h-4" /> },
   { label: "Builder", path: "/admin/builder", icon: <Layers className="w-4 h-4" /> },
   { label: "Settings", path: "/admin/settings", icon: <Settings className="w-4 h-4" /> },
 ];

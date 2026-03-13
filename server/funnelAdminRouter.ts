@@ -17,6 +17,7 @@ import {
   muxAssets,
   videoEvents,
   siteSettings,
+  leads,
 } from "../drizzle/schema";
 import { createDirectUpload, getAssetStatus, listAssets, deleteAsset, syncPreparingAssets, getCaptions, generateCaptionsForAsset, syncCaptionStatuses } from "./muxService";
 
@@ -790,6 +791,7 @@ export const funnelAdminRouter = router({
           pageSlug: z.string(),
           orderId: z.number().optional(),
           splitTestVariant: z.string().optional(),
+          metadata: z.string().optional(),
         }),
       )
       .mutation(async ({ input }) => {
@@ -802,9 +804,140 @@ export const funnelAdminRouter = router({
           pageSlug: input.pageSlug,
           orderId: input.orderId ?? null,
           splitTestVariant: input.splitTestVariant ?? null,
+          metadata: input.metadata ?? null,
         });
 
         return { success: true };
+      }),
+  }),
+
+  // ── Masterclass Analytics ────────────────────────────────────────────────────
+
+  masterclass: router({
+    overview: adminProcedure
+      .input(z.object({ startDate: z.string().optional(), endDate: z.string().optional() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+
+        const dateFilters = buildDateFilters(input, funnelEvents.createdAt);
+        const leadDateFilters: ReturnType<typeof sql>[] = [];
+        if (input.startDate) leadDateFilters.push(sql`${leads.createdAt} >= ${input.startDate}`);
+        if (input.endDate) leadDateFilters.push(sql`${leads.createdAt} <= ${input.endDate}`);
+
+        // Total masterclass page views
+        const [viewsResult] = await db
+          .select({ total: count() })
+          .from(funnelEvents)
+          .where(and(eq(funnelEvents.eventType, "page_view"), eq(funnelEvents.pageSlug, "masterclass"), ...dateFilters));
+
+        // Total masterclass opt-ins (leads with source=masterclass)
+        const [optInsResult] = await db
+          .select({ total: count() })
+          .from(leads)
+          .where(and(eq(leads.source, "masterclass"), ...leadDateFilters));
+
+        const totalViews = viewsResult?.total ?? 0;
+        const totalOptIns = optInsResult?.total ?? 0;
+        const optInRate = totalViews > 0 ? (totalOptIns / totalViews) * 100 : 0;
+
+        return { totalViews, totalOptIns, optInRate };
+      }),
+
+    overTime: adminProcedure
+      .input(z.object({ startDate: z.string().optional(), endDate: z.string().optional() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+
+        const dateFilters = buildDateFilters(input, funnelEvents.createdAt);
+        const leadDateFilters: ReturnType<typeof sql>[] = [];
+        if (input.startDate) leadDateFilters.push(sql`${leads.createdAt} >= ${input.startDate}`);
+        if (input.endDate) leadDateFilters.push(sql`${leads.createdAt} <= ${input.endDate}`);
+
+        // Daily page views
+        const viewRows = await db
+          .select({
+            date: sql<string>`DATE_FORMAT(${funnelEvents.createdAt}, '%Y-%m-%d')`,
+            count: count(),
+          })
+          .from(funnelEvents)
+          .where(and(eq(funnelEvents.eventType, "page_view"), eq(funnelEvents.pageSlug, "masterclass"), ...dateFilters))
+          .groupBy(sql`DATE_FORMAT(${funnelEvents.createdAt}, '%Y-%m-%d')`)
+          .orderBy(sql`DATE_FORMAT(${funnelEvents.createdAt}, '%Y-%m-%d')`);
+
+        // Daily opt-ins
+        const optInRows = await db
+          .select({
+            date: sql<string>`DATE_FORMAT(${leads.createdAt}, '%Y-%m-%d')`,
+            count: count(),
+          })
+          .from(leads)
+          .where(and(eq(leads.source, "masterclass"), ...leadDateFilters))
+          .groupBy(sql`DATE_FORMAT(${leads.createdAt}, '%Y-%m-%d')`)
+          .orderBy(sql`DATE_FORMAT(${leads.createdAt}, '%Y-%m-%d')`);
+
+        // Merge into a single array keyed by date
+        const dateMap = new Map<string, { views: number; optIns: number }>();
+        for (const row of viewRows) {
+          dateMap.set(row.date, { views: row.count, optIns: 0 });
+        }
+        for (const row of optInRows) {
+          const existing = dateMap.get(row.date) ?? { views: 0, optIns: 0 };
+          dateMap.set(row.date, { ...existing, optIns: row.count });
+        }
+
+        return Array.from(dateMap.entries())
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([date, data]) => ({ date, ...data }));
+      }),
+
+    byPracticeType: adminProcedure
+      .input(z.object({ startDate: z.string().optional(), endDate: z.string().optional() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+
+        const leadDateFilters: ReturnType<typeof sql>[] = [];
+        if (input.startDate) leadDateFilters.push(sql`${leads.createdAt} >= ${input.startDate}`);
+        if (input.endDate) leadDateFilters.push(sql`${leads.createdAt} <= ${input.endDate}`);
+
+        const rows = await db
+          .select({
+            practiceType: leads.practiceType,
+            count: count(),
+          })
+          .from(leads)
+          .where(and(eq(leads.source, "masterclass"), ...leadDateFilters))
+          .groupBy(leads.practiceType)
+          .orderBy(desc(count()));
+
+        return rows.map((r) => ({
+          practiceType: r.practiceType ?? "Unknown",
+          count: r.count,
+        }));
+      }),
+
+    recentLeads: adminProcedure
+      .input(z.object({ limit: z.number().min(1).max(100).default(20) }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+
+        return db
+          .select({
+            id: leads.id,
+            firstName: leads.firstName,
+            email: leads.email,
+            phone: leads.phone,
+            practiceType: leads.practiceType,
+            website: leads.website,
+            createdAt: leads.createdAt,
+          })
+          .from(leads)
+          .where(eq(leads.source, "masterclass"))
+          .orderBy(desc(leads.createdAt))
+          .limit(input.limit);
       }),
   }),
 
