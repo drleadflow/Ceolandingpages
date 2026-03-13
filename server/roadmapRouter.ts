@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { adminProcedure, publicProcedure, router } from "./_core/trpc";
 import { invokeLLM } from "./_core/llm";
-import { insertRoadmap, getRoadmapById, getAllRoadmaps, calculateLeadScore } from "./db";
+import { insertRoadmap, getRoadmapById, getAllRoadmaps, calculateLeadScore, insertLead, upsertLeadOnQuizComplete } from "./db";
 import { calculateBusinessHealthScore, getBenchmarkData, getGapAnalysis } from "./scoring";
 import { pushLeadToGHL, pushMasterclassLeadToGHL, pushRoadmapOptinToGHL } from "./ghlWebhook";
 import { fireHyrosLead, getHyrosPixelsForPage } from "./trackingService";
@@ -827,6 +827,15 @@ ${input.biggestFrustration}
           potentialRevenue: Math.round(gapAnalysis.potentialLeads * 2000), // Estimate
         });
 
+        // Save/upsert in unified leads table
+        upsertLeadOnQuizComplete(input.email, roadmapId, {
+          firstName: input.firstName,
+          businessName: input.businessName,
+          businessType: input.businessType,
+          biggestFrustration: input.biggestFrustration,
+          phone: input.phone,
+        }).catch(err => logger.error({ err }, "Failed to upsert quiz lead in leads table"));
+
         // Email is handled by GHL workflow (triggered by titan-quiz-lead tag)
         const baseUrl = process.env.APP_URL || 'https://healthproceo.com';
         const dashboardUrl = `${baseUrl}/dashboard/${roadmapId}`;
@@ -943,6 +952,7 @@ ${input.biggestFrustration}
       email: z.string().email(),
       phone: z.string().optional(),
       practiceType: z.string().min(1),
+      website: z.string().url("Please enter a valid URL").min(1, "Website is required"),
     }))
     .mutation(async ({ input, ctx }) => {
       const identifier = getRateLimitIdentifier(ctx.req);
@@ -957,6 +967,7 @@ ${input.biggestFrustration}
         email: input.email,
         phone: input.phone,
         practiceType: input.practiceType,
+        website: input.website,
       }).catch(err => logger.error({ err }, "Failed to push masterclass lead to GHL"));
 
       // Push to Hyros (async, don't block)
@@ -969,6 +980,16 @@ ${input.biggestFrustration}
           }).catch((err) => logger.error({ err }, "Hyros lead failed for masterclass"));
         }
       }).catch((err) => logger.error({ err }, "Failed to get Hyros pixels for masterclass"));
+
+      // Save to leads table
+      insertLead({
+        firstName: input.firstName,
+        email: input.email,
+        phone: input.phone,
+        source: "masterclass",
+        practiceType: input.practiceType,
+        website: input.website,
+      }).catch(err => logger.error({ err }, "Failed to save masterclass lead to DB"));
 
       logger.info({ email: input.email, practiceType: input.practiceType }, "Masterclass lead submitted");
       return { success: true };
@@ -998,6 +1019,16 @@ ${input.biggestFrustration}
         businessType: input.businessType,
         biggestFrustration: input.biggestFrustration,
       }).catch(err => logger.error({ err }, "Failed to push quiz early capture to GHL"));
+
+      // Save to leads table
+      insertLead({
+        firstName: input.firstName,
+        email: input.email,
+        source: "early_capture",
+        businessName: input.businessName,
+        businessType: input.businessType,
+        biggestFrustration: input.biggestFrustration,
+      }).catch(err => logger.error({ err }, "Failed to save early capture lead to DB"));
 
       logger.info({ email: input.email }, "Quiz early capture submitted");
       return { success: true };

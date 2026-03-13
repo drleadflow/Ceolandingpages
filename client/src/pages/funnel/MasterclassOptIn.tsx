@@ -40,6 +40,7 @@ const optInSchema = z.object({
   email: z.string().email("Valid email is required"),
   phone: z.string().min(7, "Phone number is required"),
   practiceType: z.string().min(1, "Practice type is required"),
+  website: z.string().url("Please enter a valid URL (e.g. https://yourpractice.com)"),
 });
 
 type OptInValues = z.infer<typeof optInSchema>;
@@ -128,11 +129,12 @@ export default function MasterclassOptIn() {
         email: data.email,
         phone: data.phone,
         practiceType: data.practiceType,
+        website: data.website,
       });
 
       sessionStorage.setItem(
         "masterclass_lead",
-        JSON.stringify({ firstName: data.firstName, email: data.email, phone: data.phone, practiceType: data.practiceType }),
+        JSON.stringify({ firstName: data.firstName, email: data.email, phone: data.phone, practiceType: data.practiceType, website: data.website }),
       );
       navigate("/fb-ads-course");
     } catch {
@@ -521,6 +523,19 @@ export default function MasterclassOptIn() {
                 </select>
                 {errors.practiceType && (
                   <p className="mt-1 text-xs text-red-500">{errors.practiceType.message}</p>
+                )}
+              </div>
+
+              <div>
+                <input
+                  {...register("website")}
+                  type="url"
+                  placeholder="Your Practice Website (e.g. https://yourpractice.com)"
+                  className="w-full rounded-lg border border-[var(--titan-border)] bg-white px-4 py-3 text-base transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+                  style={{ color: "var(--titan-text-primary)" }}
+                />
+                {errors.website && (
+                  <p className="mt-1 text-xs text-red-500">{errors.website.message}</p>
                 )}
               </div>
 

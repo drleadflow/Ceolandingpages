@@ -137,6 +137,7 @@ interface GHLMasterclassPayload {
   email: string;
   phone?: string;
   practiceType: string;
+  website?: string;
 }
 
 /**
@@ -155,6 +156,7 @@ export async function pushMasterclassLeadToGHL(payload: GHLMasterclassPayload): 
       email: payload.email,
       phone: payload.phone || "",
       businessType: payload.practiceType,
+      website: payload.website || "",
       tags: "masterclass-lead",
       source: "Masterclass Opt-In",
     };

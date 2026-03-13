@@ -404,6 +404,29 @@ export const funnelTemplates = mysqlTable("funnelTemplates", {
 export type FunnelTemplate = typeof funnelTemplates.$inferSelect;
 export type InsertFunnelTemplate = typeof funnelTemplates.$inferInsert;
 
+// ── Unified Leads Table ──
+
+export const leads = mysqlTable("leads", {
+  id: int("id").autoincrement().primaryKey(),
+  firstName: varchar("firstName", { length: 255 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  phone: varchar("phone", { length: 50 }),
+  source: mysqlEnum("leadSource", ["masterclass", "early_capture", "quiz_complete"]).notNull(),
+  status: mysqlEnum("leadStatus", ["new", "contacted", "qualified", "converted"]).default("new").notNull(),
+  businessName: varchar("leadBusinessName", { length: 255 }),
+  businessType: varchar("leadBusinessType", { length: 255 }),
+  practiceType: varchar("practiceType", { length: 255 }),
+  website: varchar("leadWebsite", { length: 500 }),
+  biggestFrustration: text("leadBiggestFrustration"),
+  roadmapId: int("roadmapId"),
+  metadata: text("leadMetadata"),
+  createdAt: timestamp("leadCreatedAt").defaultNow().notNull(),
+  updatedAt: timestamp("leadUpdatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Lead = typeof leads.$inferSelect;
+export type InsertLead = typeof leads.$inferInsert;
+
 // ── Site Settings (key-value store for admin toggles) ──
 
 export const siteSettings = mysqlTable("siteSettings", {

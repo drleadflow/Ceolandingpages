@@ -1,40 +1,45 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { FunnelProvider } from "./contexts/FunnelContext";
-import Home from "./pages/Home";
-import SmartQuiz from "./pages/SmartQuiz";
-import Dashboard from "./pages/Dashboard";
-import AdminLeads from "./pages/AdminLeads";
-import AdminLayout from "./pages/admin/AdminLayout";
-import FunnelProducts from "./pages/admin/FunnelProducts";
-import FunnelPageEditor from "./pages/admin/FunnelPageEditor";
-import FunnelAnalytics from "./pages/admin/FunnelAnalytics";
-import FunnelSplitTests from "./pages/admin/FunnelSplitTests";
-import TrackingSettings from "./pages/admin/TrackingSettings";
-import VideoLibrary from "./pages/admin/VideoLibrary";
-import VideoAnalytics from "./pages/admin/VideoAnalytics";
-import PublicRoadmap from "./pages/PublicRoadmap";
-import SharedPlaybook from "./pages/SharedPlaybook";
-import SalesPage from "./pages/funnel/SalesPage";
-import UpsellPage from "./pages/funnel/UpsellPage";
-import DownsellPage from "./pages/funnel/DownsellPage";
-import ThankYouPage from "./pages/funnel/ThankYouPage";
-import BookingPage from "./pages/funnel/BookingPage";
-import CallPrepPage from "./pages/funnel/CallPrepPage";
-import AgencyPage from "./pages/funnel/AgencyPage";
-import VideoPlayerPage from "./pages/funnel/VideoPlayerPage";
-import FunnelList from "./pages/admin/FunnelList";
-import FunnelBuilder from "./pages/admin/FunnelBuilder";
-import FunnelStepAnalytics from "./pages/admin/FunnelStepAnalytics";
-import FunnelTemplates from "./pages/admin/FunnelTemplates";
-import DynamicFunnel from "./pages/funnel/DynamicFunnel";
+
+// Masterclass + SalesPage loaded eagerly (ad traffic landing pages)
 import MasterclassOptIn from "./pages/funnel/MasterclassOptIn";
-import RoadmapInfo from "./pages/RoadmapInfo";
-import SettingsPage from "./pages/admin/SettingsPage";
+import SalesPage from "./pages/funnel/SalesPage";
+
+// Everything else lazy-loaded — only fetched when the route is visited
+const Home = lazy(() => import("./pages/Home"));
+const SmartQuiz = lazy(() => import("./pages/SmartQuiz"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const AdminLeads = lazy(() => import("./pages/AdminLeads"));
+const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
+const FunnelProducts = lazy(() => import("./pages/admin/FunnelProducts"));
+const FunnelPageEditor = lazy(() => import("./pages/admin/FunnelPageEditor"));
+const FunnelAnalytics = lazy(() => import("./pages/admin/FunnelAnalytics"));
+const FunnelSplitTests = lazy(() => import("./pages/admin/FunnelSplitTests"));
+const TrackingSettings = lazy(() => import("./pages/admin/TrackingSettings"));
+const VideoLibrary = lazy(() => import("./pages/admin/VideoLibrary"));
+const VideoAnalytics = lazy(() => import("./pages/admin/VideoAnalytics"));
+const PublicRoadmap = lazy(() => import("./pages/PublicRoadmap"));
+const SharedPlaybook = lazy(() => import("./pages/SharedPlaybook"));
+const UpsellPage = lazy(() => import("./pages/funnel/UpsellPage"));
+const DownsellPage = lazy(() => import("./pages/funnel/DownsellPage"));
+const ThankYouPage = lazy(() => import("./pages/funnel/ThankYouPage"));
+const BookingPage = lazy(() => import("./pages/funnel/BookingPage"));
+const CallPrepPage = lazy(() => import("./pages/funnel/CallPrepPage"));
+const AgencyPage = lazy(() => import("./pages/funnel/AgencyPage"));
+const VideoPlayerPage = lazy(() => import("./pages/funnel/VideoPlayerPage"));
+const FunnelList = lazy(() => import("./pages/admin/FunnelList"));
+const FunnelBuilder = lazy(() => import("./pages/admin/FunnelBuilder"));
+const FunnelStepAnalytics = lazy(() => import("./pages/admin/FunnelStepAnalytics"));
+const FunnelTemplates = lazy(() => import("./pages/admin/FunnelTemplates"));
+const DynamicFunnel = lazy(() => import("./pages/funnel/DynamicFunnel"));
+const RoadmapInfo = lazy(() => import("./pages/RoadmapInfo"));
+const SettingsPage = lazy(() => import("./pages/admin/SettingsPage"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -110,6 +115,17 @@ function Router() {
 //   to keep consistent foreground/background color across components
 // - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
 
+function LazyFallback() {
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc" }}>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ width: 40, height: 40, border: "3px solid #e2e8f0", borderTopColor: "#3b82f6", borderRadius: "50%", animation: "sp .6s linear infinite", margin: "0 auto 12px" }} />
+        <p style={{ color: "#64748b", fontSize: 14, fontFamily: "system-ui, sans-serif" }}>Loading...</p>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   return (
     <ErrorBoundary>
@@ -120,7 +136,9 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <FunnelProvider>
-            <Router />
+            <Suspense fallback={<LazyFallback />}>
+              <Router />
+            </Suspense>
           </FunnelProvider>
         </TooltipProvider>
       </ThemeProvider>
