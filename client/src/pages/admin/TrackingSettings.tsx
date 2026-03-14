@@ -44,7 +44,7 @@ import { Plus, Pencil, ToggleLeft, ToggleRight, Trash2, Radio } from "lucide-rea
 
 const pixelSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  platform: z.enum(["facebook", "google_analytics", "google_tag_manager", "tiktok", "hyros", "custom"]),
+  platform: z.enum(["facebook", "google_analytics", "google_tag_manager", "tiktok", "hyros", "posthog", "custom"]),
   pixelId: z.string().min(1, "Pixel/Measurement ID is required"),
   accessToken: z.string().optional(),
   pageScope: z.string().optional(), // JSON string
@@ -82,6 +82,11 @@ const PLATFORM_CONFIG: Record<string, { label: string; color: string; idLabel: s
     label: "Hyros",
     color: "bg-orange-500/20 text-orange-400 border-orange-500/30",
     idLabel: "Script Hash (ph parameter)",
+  },
+  posthog: {
+    label: "PostHog",
+    color: "bg-indigo-500/20 text-indigo-400 border-indigo-500/30",
+    idLabel: "Project API Key",
   },
   custom: {
     label: "Custom",
@@ -130,6 +135,15 @@ const DEFAULT_EVENTS: Record<string, Record<string, string>> = {
     upsell_accept: "Purchase",
     downsell_view: "ViewContent",
     downsell_accept: "Purchase",
+  },
+  posthog: {
+    page_view: "$pageview",
+    checkout_start: "checkout_started",
+    purchase: "purchase_completed",
+    upsell_view: "upsell_viewed",
+    upsell_accept: "upsell_accepted",
+    downsell_view: "downsell_viewed",
+    downsell_accept: "downsell_accepted",
   },
 };
 

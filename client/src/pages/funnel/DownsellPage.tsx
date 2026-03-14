@@ -11,6 +11,7 @@ import { GuaranteeBlock } from "@/components/funnel/GuaranteeBlock";
 import { FunnelVideoPlayer } from "@/components/funnel/FunnelVideoPlayer";
 import { getSessionId } from "@/lib/funnelTracking";
 import { usePixelTracking } from "@/hooks/usePixelTracking";
+import { usePostHogEvents } from "@/hooks/usePostHogEvents";
 
 const SESSION_ITEMS = [
   "60-Minute 1-on-1 Strategy Session with Dr. Emeka",
@@ -51,6 +52,7 @@ export default function DownsellPage() {
   };
 
   const { fireEvent } = usePixelTracking("downsell");
+  usePostHogEvents("downsell");
 
   const trackEvent = trpc.funnelAdmin.events.track.useMutation();
 

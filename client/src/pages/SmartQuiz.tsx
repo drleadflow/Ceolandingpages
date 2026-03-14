@@ -12,6 +12,7 @@ import { ExitIntentModal } from "@/components/ExitIntentModal";
 import { SocialProof } from "@/components/SocialProof";
 import { ConfidenceSlider } from "@/components/ConfidenceSlider";
 import { usePixelTracking } from "@/hooks/usePixelTracking";
+import { usePostHogEvents } from "@/hooks/usePostHogEvents";
 
 type QuestionType = "text" | "buttons" | "lesson" | "insight" | "confidence";
 
@@ -479,6 +480,7 @@ export default function SmartQuiz() {
   }
 
   const { fireEvent } = usePixelTracking("quiz");
+  usePostHogEvents("quiz");
 
   useEffect(() => { fireEvent("page_view"); }, []);
 

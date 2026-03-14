@@ -232,6 +232,7 @@ export const trackingPixels = mysqlTable("trackingPixels", {
     "google_tag_manager",
     "tiktok",
     "hyros",
+    "posthog",
     "custom",
   ]).notNull(),
   pixelId: varchar("pixelId", { length: 255 }).notNull(),
@@ -437,3 +438,66 @@ export const siteSettings = mysqlTable("siteSettings", {
 });
 
 export type SiteSetting = typeof siteSettings.$inferSelect;
+
+// ── Video Review Platform ──
+
+export const reviewProjects = mysqlTable("reviewProjects", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ReviewProject = typeof reviewProjects.$inferSelect;
+export type InsertReviewProject = typeof reviewProjects.$inferInsert;
+
+export const reviewAssets = mysqlTable("reviewAssets", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  muxAssetId: varchar("muxAssetId", { length: 255 }).notNull(),
+  playbackId: varchar("playbackId", { length: 255 }),
+  filename: varchar("filename", { length: 500 }),
+  title: varchar("title", { length: 255 }),
+  duration: int("duration"),
+  version: int("version").default(1).notNull(),
+  parentAssetId: int("parentAssetId"),
+  changeNotes: text("changeNotes"),
+  status: mysqlEnum("reviewAssetStatus", ["pending", "in-review", "needs-changes", "approved"]).default("pending").notNull(),
+  uploaderName: varchar("uploaderName", { length: 255 }),
+  uploadId: varchar("uploadId", { length: 255 }),
+  muxStatus: mysqlEnum("reviewMuxStatus", ["preparing", "ready", "errored"]).default("preparing").notNull(),
+  createdAt: timestamp("reviewAssetCreatedAt").defaultNow().notNull(),
+  updatedAt: timestamp("reviewAssetUpdatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ReviewAsset = typeof reviewAssets.$inferSelect;
+export type InsertReviewAsset = typeof reviewAssets.$inferInsert;
+
+export const reviewComments = mysqlTable("reviewComments", {
+  id: int("id").autoincrement().primaryKey(),
+  assetId: int("assetId").notNull(),
+  parentId: int("parentId"),
+  timestamp: int("timestamp"),
+  text: text("text").notNull(),
+  author: varchar("author", { length: 255 }).notNull(),
+  annotation: text("annotation"),
+  resolved: int("resolved").default(0).notNull(),
+  createdAt: timestamp("reviewCommentCreatedAt").defaultNow().notNull(),
+});
+
+export type ReviewComment = typeof reviewComments.$inferSelect;
+export type InsertReviewComment = typeof reviewComments.$inferInsert;
+
+export const reviewShareLinks = mysqlTable("reviewShareLinks", {
+  id: int("id").autoincrement().primaryKey(),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  assetId: int("assetId"),
+  projectId: int("projectId"),
+  permissions: mysqlEnum("sharePermissions", ["view", "comment", "approve"]).default("view").notNull(),
+  expiresAt: timestamp("expiresAt"),
+  createdAt: timestamp("shareCreatedAt").defaultNow().notNull(),
+});
+
+export type ReviewShareLink = typeof reviewShareLinks.$inferSelect;
+export type InsertReviewShareLink = typeof reviewShareLinks.$inferInsert;

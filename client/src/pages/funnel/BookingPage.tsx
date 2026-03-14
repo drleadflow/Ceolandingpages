@@ -7,6 +7,7 @@ import { FunnelNav } from "@/components/funnel/FunnelNav";
 import { SenjaTestimonials } from "@/components/funnel/SenjaTestimonials";
 import { getSessionId } from "@/lib/funnelTracking";
 import { usePixelTracking } from "@/hooks/usePixelTracking";
+import { usePostHogEvents } from "@/hooks/usePostHogEvents";
 
 const GHL_BOOKING_URL = "https://links.doctorleadflow.com/widget/booking/9UjOQl0JVnNqG41Uboyh";
 
@@ -29,6 +30,7 @@ export default function BookingPage() {
 
   const sessionId = getSessionId();
   const { fireEvent } = usePixelTracking("book-session");
+  usePostHogEvents("book-session");
   const trackEvent = trpc.funnelAdmin.events.track.useMutation();
 
   // Determine purchase value from purchased products

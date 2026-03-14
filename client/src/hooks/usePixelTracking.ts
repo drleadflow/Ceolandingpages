@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useRef } from "react";
+import posthog from "posthog-js";
 import { trpc } from "@/lib/trpc";
 
 // Default event mappings per platform
@@ -47,6 +48,15 @@ const DEFAULT_EVENT_MAPPINGS: Record<string, Record<string, string>> = {
     upsell_accept: "Purchase",
     downsell_view: "ViewContent",
     downsell_accept: "Purchase",
+  },
+  posthog: {
+    page_view: "$pageview",
+    checkout_start: "checkout_started",
+    purchase: "purchase_completed",
+    upsell_view: "upsell_viewed",
+    upsell_accept: "upsell_accepted",
+    downsell_view: "downsell_viewed",
+    downsell_accept: "downsell_accepted",
   },
 };
 
@@ -167,6 +177,20 @@ function injectHyrosScript(pixelId: string): void {
   document.head.appendChild(script);
 }
 
+function initPostHog(apiKey: string): void {
+  const key = `ph_${apiKey}`;
+  if (injectedPixels.has(key)) return;
+  injectedPixels.add(key);
+
+  posthog.init(apiKey, {
+    api_host: "https://us.i.posthog.com",
+    person_profiles: "identified_only",
+    capture_pageview: true,
+    capture_pageleave: true,
+    autocapture: true,
+  });
+}
+
 function injectPixelScript(pixel: PixelConfig): void {
   switch (pixel.platform) {
     case "facebook":
@@ -183,6 +207,9 @@ function injectPixelScript(pixel: PixelConfig): void {
       break;
     case "hyros":
       injectHyrosScript(pixel.pixelId);
+      break;
+    case "posthog":
+      initPostHog(pixel.pixelId);
       break;
   }
 }
@@ -213,6 +240,9 @@ function firePixelEvent(
       break;
     case "tiktok":
       window.ttq?.track(mappedEvent, params);
+      break;
+    case "posthog":
+      posthog.capture(mappedEvent, params);
       break;
   }
 }

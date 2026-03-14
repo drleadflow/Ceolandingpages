@@ -4,6 +4,8 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { usePixelTracking } from "@/hooks/usePixelTracking";
+import { usePostHogEvents } from "@/hooks/usePostHogEvents";
+import posthog from "posthog-js";
 import { getSessionId } from "@/lib/funnelTracking";
 import { trpc } from "@/lib/trpc";
 import { FunnelNav } from "@/components/funnel/FunnelNav";
@@ -100,6 +102,7 @@ export default function MasterclassOptIn() {
   }, [navigate]);
 
   const { fireEvent } = usePixelTracking("masterclass");
+  usePostHogEvents("masterclass");
 
   // Dual-tracking: database events + pixel events (same pattern as SalesPage)
   const trackEvent = trpc.funnelAdmin.events.track.useMutation();
@@ -139,6 +142,12 @@ export default function MasterclassOptIn() {
 
   const onSubmit = async (data: OptInValues) => {
     setIsSubmitting(true);
+    posthog.capture("masterclass_lead_submitted", {
+      page: "masterclass",
+      practice_type: data.practiceType,
+      has_website: Boolean(data.website?.trim()),
+    });
+    fireEvent("checkout_start");
     try {
       // Normalize website: auto-prepend https:// if needed, or omit if empty
       let website: string | undefined;
@@ -206,7 +215,10 @@ export default function MasterclassOptIn() {
         {/* ── Video Thumbnail with Play Gate ──────────────────────────────────── */}
         <div className="mx-auto mb-8 max-w-3xl">
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => {
+              setShowModal(true);
+              posthog.capture("optin_modal_opened", { page: "masterclass", trigger: "video_play_button" });
+            }}
             className="relative w-full overflow-hidden rounded-2xl border border-[var(--titan-border)] bg-gray-900 shadow-xl group cursor-pointer"
             style={{ aspectRatio: "16/9" }}
           >
@@ -310,7 +322,10 @@ export default function MasterclassOptIn() {
         {/* CTA below topics */}
         <div className="mt-10 text-center">
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => {
+              setShowModal(true);
+              posthog.capture("optin_modal_opened", { page: "masterclass", trigger: "watch_training_cta" });
+            }}
             className="inline-flex items-center gap-2 rounded-xl px-8 py-4 text-lg font-semibold text-white transition-all duration-200 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98]"
             style={{ background: "var(--titan-grad-primary)" }}
           >
@@ -347,7 +362,10 @@ export default function MasterclassOptIn() {
 
           <div className="mt-10 text-center">
             <button
-              onClick={() => setShowModal(true)}
+              onClick={() => {
+                setShowModal(true);
+                posthog.capture("optin_modal_opened", { page: "masterclass", trigger: "get_free_access_cta" });
+              }}
               className="inline-flex items-center gap-2 rounded-xl px-8 py-4 text-lg font-semibold text-white transition-all duration-200 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98]"
               style={{ background: "var(--titan-grad-primary)" }}
             >
@@ -492,7 +510,7 @@ export default function MasterclassOptIn() {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+            <form onSubmit={handleSubmit(onSubmit)} data-track-form="masterclass_optin" className="space-y-3">
               <div>
                 <input
                   {...register("firstName")}

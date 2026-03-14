@@ -13,6 +13,7 @@ import { SenjaTestimonials } from "@/components/funnel/SenjaTestimonials";
 import { FunnelVideoPlayer } from "@/components/funnel/FunnelVideoPlayer";
 import { getSessionId } from "@/lib/funnelTracking";
 import { usePixelTracking } from "@/hooks/usePixelTracking";
+import { usePostHogEvents } from "@/hooks/usePostHogEvents";
 
 const VAULT_ITEMS = [
   "EVERYTHING in the FB Ads Course (you already have this!)",
@@ -64,6 +65,7 @@ export default function UpsellPage() {
   const vaultProduct = productsQuery.data?.find(p => p.slug === "ceo-vault");
 
   const { fireEvent } = usePixelTracking("upsell");
+  usePostHogEvents("upsell");
 
   // Event tracking
   const trackEvent = trpc.funnelAdmin.events.track.useMutation();

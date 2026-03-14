@@ -21,6 +21,7 @@ import { CaseStudyCard2 } from "@/components/funnel/CaseStudyCard2";
 import { CaseStudyCard3 } from "@/components/funnel/CaseStudyCard3";
 import { getSessionId } from "@/lib/funnelTracking";
 import { usePixelTracking } from "@/hooks/usePixelTracking";
+import { usePostHogEvents } from "@/hooks/usePostHogEvents";
 
 const formSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -147,6 +148,7 @@ export default function SalesPage() {
   };
 
   const { fireEvent } = usePixelTracking("sales");
+  usePostHogEvents("sales");
 
   // Event tracking
   const trackEvent = trpc.funnelAdmin.events.track.useMutation();

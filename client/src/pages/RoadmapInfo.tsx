@@ -5,6 +5,7 @@ import { SenjaTestimonials } from "@/components/funnel/SenjaTestimonials";
 import { PathSelector } from "@/components/funnel/PathSelector";
 import { trpc } from "@/lib/trpc";
 import { usePixelTracking } from "@/hooks/usePixelTracking";
+import { usePostHogEvents } from "@/hooks/usePostHogEvents";
 import { getSessionId } from "@/lib/funnelTracking";
 
 const DEFAULTS = {
@@ -30,6 +31,7 @@ export default function RoadmapInfo() {
 
   const sessionId = getSessionId();
   const { fireEvent } = usePixelTracking("roadmap-info");
+  usePostHogEvents("roadmap-info");
   const trackEvent = trpc.funnelAdmin.events.track.useMutation();
 
   useEffect(() => {

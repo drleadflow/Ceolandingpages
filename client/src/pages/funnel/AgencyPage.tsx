@@ -5,6 +5,7 @@ import { ExitIntentPopup } from "@/components/funnel/ExitIntentPopup";
 import { SenjaTestimonials } from "@/components/funnel/SenjaTestimonials";
 import { getSessionId } from "@/lib/funnelTracking";
 import { usePixelTracking } from "@/hooks/usePixelTracking";
+import { usePostHogEvents } from "@/hooks/usePostHogEvents";
 import { trpc } from "@/lib/trpc";
 
 const GHL_BOOKING_URL = "https://links.doctorleadflow.com/widget/booking/9UjOQl0JVnNqG41Uboyh";
@@ -77,6 +78,7 @@ export default function AgencyPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const sessionId = getSessionId();
   const { fireEvent } = usePixelTracking("agency");
+  usePostHogEvents("agency");
   const trackEvent = trpc.funnelAdmin.events.track.useMutation();
 
   useEffect(() => {

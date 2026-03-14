@@ -6,6 +6,7 @@ import { useFunnel } from "@/contexts/FunnelContext";
 import { FunnelNav } from "@/components/funnel/FunnelNav";
 import { getSessionId } from "@/lib/funnelTracking";
 import { usePixelTracking } from "@/hooks/usePixelTracking";
+import { usePostHogEvents } from "@/hooks/usePostHogEvents";
 
 export default function ThankYouPage() {
   const { orderId, firstName, purchasedProducts } = useFunnel();
@@ -24,6 +25,7 @@ export default function ThankYouPage() {
 
   const sessionId = getSessionId();
   const { fireEvent } = usePixelTracking("thank-you");
+  usePostHogEvents("thank-you");
   const trackEvent = trpc.funnelAdmin.events.track.useMutation();
 
   useEffect(() => {
