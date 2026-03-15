@@ -93,6 +93,7 @@ export default function MasterclassOptIn() {
   const [, navigate] = useLocation();
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showStickyCta, setShowStickyCta] = useState(false);
 
   // If already opted in, skip straight to the sales page
   useEffect(() => {
@@ -134,11 +135,18 @@ export default function MasterclassOptIn() {
   useEffect(() => {
     if (showModal) {
       document.body.style.overflow = "hidden";
+      setShowStickyCta(false);
     } else {
       document.body.style.overflow = "";
     }
     return () => { document.body.style.overflow = ""; };
   }, [showModal]);
+
+  // Show sticky CTA bar after 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => setShowStickyCta(true), 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const onSubmit = async (data: OptInValues) => {
     setIsSubmitting(true);
@@ -235,17 +243,32 @@ export default function MasterclassOptIn() {
             {/* Dark overlay */}
             <div className="absolute inset-0 bg-black/30 transition-colors group-hover:bg-black/40" />
 
-            {/* Play button */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition group-hover:bg-white/30 group-hover:scale-110">
-                <Play className="ml-1 h-8 w-8 text-white" fill="white" />
+            {/* Top badge */}
+            <div className="absolute top-4 left-4 z-10">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white uppercase tracking-wide shadow-lg">
+                <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+                Free Training
+              </span>
+            </div>
+
+            {/* Play button with pulse glow */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+              <div className="relative">
+                {/* Pulse ring */}
+                <div className="absolute inset-0 h-20 w-20 rounded-full bg-white/30 animate-[pulse-ring_2s_ease-out_infinite]" />
+                <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-white/25 backdrop-blur-sm transition group-hover:bg-white/40 group-hover:scale-110 shadow-2xl">
+                  <Play className="ml-1 h-8 w-8 text-white drop-shadow-lg" fill="white" />
+                </div>
               </div>
+              <span className="text-white text-sm font-semibold drop-shadow-lg tracking-wide">
+                Click to Watch Now
+              </span>
             </div>
 
             {/* Bottom label */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-4 py-4">
-              <p className="text-white text-sm font-medium">
-                Click to watch the free training
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-4 py-4">
+              <p className="text-white text-sm font-semibold">
+                The exact Facebook ad system for health professionals
               </p>
             </div>
           </button>
@@ -609,11 +632,55 @@ export default function MasterclassOptIn() {
         </div>
       )}
 
-      {/* Modal animation */}
+      {/* ── Sticky CTA Bar ────────────────────────────────────────────────── */}
+      {showStickyCta && !showModal && (
+        <div
+          className="fixed bottom-0 left-0 right-0 z-40 border-t border-blue-200/30 bg-white/95 backdrop-blur-md shadow-[0_-4px_20px_rgba(0,0,0,0.1)]"
+          style={{ animation: "sticky-enter 0.3s ease-out" }}
+        >
+          <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
+            <div className="hidden sm:block">
+              <p className="text-sm font-semibold" style={{ color: "var(--titan-text-primary)" }}>
+                Free Facebook Ads Training for Health Pros
+              </p>
+              <p className="text-xs" style={{ color: "var(--titan-text-muted)" }}>
+                Join 500+ practitioners who've watched this
+              </p>
+            </div>
+            <div className="flex w-full sm:w-auto items-center gap-3">
+              <button
+                onClick={() => {
+                  setShowModal(true);
+                  posthog.capture("optin_modal_opened", { page: "masterclass", trigger: "sticky_cta_bar" });
+                }}
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90 hover:scale-[1.02] active:scale-[0.98]"
+                style={{ background: "var(--titan-grad-primary)" }}
+              >
+                <Play className="h-4 w-4" fill="white" />
+                Watch Free Training
+              </button>
+              <span className="hidden sm:flex items-center gap-1 text-xs text-emerald-600 font-medium">
+                <Shield className="h-3.5 w-3.5" />
+                100% Free
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Animations */}
       <style>{`
         @keyframes modal-enter {
           from { opacity: 0; transform: scale(0.95) translateY(8px); }
           to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes sticky-enter {
+          from { opacity: 0; transform: translateY(100%); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse-ring {
+          0% { transform: scale(1); opacity: 0.4; }
+          100% { transform: scale(1.8); opacity: 0; }
         }
       `}</style>
     </div>
