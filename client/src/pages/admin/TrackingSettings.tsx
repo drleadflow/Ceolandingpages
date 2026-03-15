@@ -158,12 +158,15 @@ const INTERNAL_EVENTS = [
 ];
 
 const PAGE_SCOPE_OPTIONS = [
+  "masterclass",
   "sales",
+  "agency",
   "upsell",
   "downsell",
   "thank-you",
   "book-session",
   "quiz",
+  "roadmap-info",
 ];
 
 // ---------------------------------------------------------------------------

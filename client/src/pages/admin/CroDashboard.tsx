@@ -73,13 +73,6 @@ function TypeBadge({ type }: TypeBadgeProps) {
   );
 }
 
-const STATS = [
-  { label: "Funnel Pages Tracked", value: 9, icon: <LayoutList className="w-5 h-5" /> },
-  { label: "Active Experiments", value: 1, icon: <FlaskConical className="w-5 h-5" /> },
-  { label: "Changes This Month", value: 2, icon: <TrendingUp className="w-5 h-5" /> },
-  { label: "Days Since Last Change", value: 0, icon: <Clock className="w-5 h-5" /> },
-];
-
 const CHANGELOG = [
   {
     id: "002",
@@ -93,7 +86,7 @@ const CHANGELOG = [
   },
   {
     id: "001",
-    date: "Mar 12, 2026",
+    date: "Mar 14, 2026",
     type: "infrastructure" as const,
     title: "PostHog Tracking Installation",
     description:
@@ -103,7 +96,32 @@ const CHANGELOG = [
   },
 ];
 
+function computeStats() {
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  const activeExperiments = CHANGELOG.filter((e) => e.status === "live").length;
+  const changesThisMonth = CHANGELOG.filter((e) => {
+    const d = new Date(e.date);
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+  }).length;
+
+  const dates = CHANGELOG.map((e) => new Date(e.date).getTime());
+  const mostRecent = Math.max(...dates);
+  const daysSinceLastChange = Math.floor((now.getTime() - mostRecent) / (1000 * 60 * 60 * 24));
+
+  return [
+    { label: "Funnel Pages Tracked", value: 9, icon: <LayoutList className="w-5 h-5" /> },
+    { label: "Active Experiments", value: activeExperiments, icon: <FlaskConical className="w-5 h-5" /> },
+    { label: "Changes This Month", value: changesThisMonth, icon: <TrendingUp className="w-5 h-5" /> },
+    { label: "Days Since Last Change", value: daysSinceLastChange, icon: <Clock className="w-5 h-5" /> },
+  ];
+}
+
 export default function CroDashboard() {
+  const stats = computeStats();
+
   return (
     <div className="min-h-screen bg-slate-950 p-6 space-y-6">
       {/* Page header */}
@@ -117,7 +135,7 @@ export default function CroDashboard() {
 
       {/* Stats row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {STATS.map((s) => (
+        {stats.map((s) => (
           <StatCard key={s.label} label={s.label} value={s.value} icon={s.icon} />
         ))}
       </div>
