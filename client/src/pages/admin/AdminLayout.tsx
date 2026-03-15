@@ -1,12 +1,14 @@
 import { type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import {
+  Activity,
   Users,
   Package,
   FileText,
   BarChart2,
   FlaskConical,
   Radio,
+  MessageSquare,
   Video,
   Layers,
   BarChart3,
@@ -21,12 +23,14 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
+  { label: "CRO Dashboard", path: "/admin/cro", icon: <Activity className="w-4 h-4" /> },
   { label: "Leads", path: "/admin/leads", icon: <Users className="w-4 h-4" /> },
   { label: "Products", path: "/admin/funnel/products", icon: <Package className="w-4 h-4" /> },
   { label: "Pages", path: "/admin/funnel/pages", icon: <FileText className="w-4 h-4" /> },
   { label: "Analytics", path: "/admin/funnel/analytics", icon: <BarChart2 className="w-4 h-4" /> },
   { label: "Split Tests", path: "/admin/funnel/split-tests", icon: <FlaskConical className="w-4 h-4" /> },
   { label: "Tracking", path: "/admin/funnel/tracking", icon: <Radio className="w-4 h-4" /> },
+  { label: "Review", path: "/review", icon: <MessageSquare className="w-4 h-4" /> },
   { label: "Videos", path: "/admin/video-library", icon: <Video className="w-4 h-4" /> },
   { label: "Video Analytics", path: "/admin/video-analytics", icon: <BarChart3 className="w-4 h-4" /> },
   { label: "Masterclass", path: "/admin/masterclass", icon: <GraduationCap className="w-4 h-4" /> },
@@ -54,7 +58,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           {NAV_ITEMS.map((item) => {
             const isActive =
               location === item.path ||
-              (item.path === "/admin/leads" && location === "/admin");
+              (item.path === "/admin/leads" && location === "/admin") ||
+              (item.path === "/review" && location.startsWith("/review"));
             return (
               <Link key={item.path} href={item.path}>
                 <a

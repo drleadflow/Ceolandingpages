@@ -24,6 +24,7 @@ const TrackingSettings = lazy(() => import("./pages/admin/TrackingSettings"));
 const VideoLibrary = lazy(() => import("./pages/admin/VideoLibrary"));
 const VideoAnalytics = lazy(() => import("./pages/admin/VideoAnalytics"));
 const MasterclassAnalytics = lazy(() => import("./pages/admin/MasterclassAnalytics"));
+const CroDashboard = lazy(() => import("./pages/admin/CroDashboard"));
 const PublicRoadmap = lazy(() => import("./pages/PublicRoadmap"));
 const SharedPlaybook = lazy(() => import("./pages/SharedPlaybook"));
 const UpsellPage = lazy(() => import("./pages/funnel/UpsellPage"));
@@ -40,6 +41,10 @@ const FunnelTemplates = lazy(() => import("./pages/admin/FunnelTemplates"));
 const DynamicFunnel = lazy(() => import("./pages/funnel/DynamicFunnel"));
 const RoadmapInfo = lazy(() => import("./pages/RoadmapInfo"));
 const SettingsPage = lazy(() => import("./pages/admin/SettingsPage"));
+const ReviewProjects = lazy(() => import("./pages/review/ReviewProjects"));
+const ReviewProject = lazy(() => import("./pages/review/ReviewProject"));
+const ReviewAsset = lazy(() => import("./pages/review/ReviewAsset"));
+const ReviewShare = lazy(() => import("./pages/review/ReviewShare"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 function Router() {
@@ -61,6 +66,16 @@ function Router() {
       <Route path="/roadmap-info" component={RoadmapInfo} />
       <Route path="/agency" component={AgencyPage} />
       <Route path="/v/:playbackId" component={VideoPlayerPage} />
+      <Route path="/r/:token" component={ReviewShare} />
+      <Route path="/review/:projectId/:assetId">
+        <AdminLayout><ReviewAsset /></AdminLayout>
+      </Route>
+      <Route path="/review/:projectId">
+        <AdminLayout><ReviewProject /></AdminLayout>
+      </Route>
+      <Route path="/review">
+        <AdminLayout><ReviewProjects /></AdminLayout>
+      </Route>
       <Route path="/admin/builder/:id/analytics">
         <FunnelStepAnalytics />
       </Route>
@@ -102,6 +117,9 @@ function Router() {
       </Route>
       <Route path="/admin/settings">
         <AdminLayout><SettingsPage /></AdminLayout>
+      </Route>
+      <Route path="/admin/cro">
+        <AdminLayout><CroDashboard /></AdminLayout>
       </Route>
       <Route path="/admin">
         <AdminLayout><AdminLeads /></AdminLayout>
